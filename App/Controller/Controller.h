@@ -15,6 +15,10 @@ public:
     void handleInput(const char& input);
     void handleSetDirectory(const std::string& directory);
     static void MusicFinishedCallbackWrapper();
+     SerialPort sp;
+    std::atomic<bool> serial_command_received;
+    char serial_command;
+    std::mutex command_mutex;
 private:
     std::vector<MediaFile>& parseTabtofiles();
     std::vector<std::string>& parseTabtofilepaths();
@@ -38,10 +42,7 @@ private:
     std::stack<Tab> tabHistory;
     static Player* playerptr;
     std::string cur_dir;
-    SerialPort sp;
-    std::atomic<bool> serial_command_received;
-    char serial_command;
-    std::mutex command_mutex;
+   
 };
 
 #endif // CONTROLLER_H
