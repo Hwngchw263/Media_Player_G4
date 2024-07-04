@@ -4,7 +4,7 @@
 #include <algorithm>
 
 Player *Controller::playerptr = nullptr;
-Controller::Controller(){
+Controller::Controller():sp(SerialPort::getOpenSDADevicePath().c_str()), serial_command_received(false){
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
         {
             std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
@@ -24,6 +24,10 @@ Controller::Controller(){
             std::cerr << "Mix_OpenAudio Error: " << Mix_GetError() << std::endl;
             // Handle SDL_Mixer audio initialization error
         }
+     if (!sp.configure()) {
+        std::cerr << "Failed to configure serial port" << std::endl;
+        std::exit(1);  // Exit if configuration fails
+    }
 }
 Controller::~Controller(){
     // Quit SDL_Mixer
