@@ -5,7 +5,8 @@
 #include <termios.h>  // POSIX terminal control definitions
 #include <unistd.h>   // write(), read(), close()
 #include <cstring>    // strerror
-
+#include <regex>
+#include <filesystem>
 SerialPort::SerialPort(const char* port) {
     port_name = std::string(port);
     serial_port = open(port, O_RDWR | O_NONBLOCK);
@@ -73,4 +74,19 @@ std::string SerialPort::readData() {
     }
 
     return "";
+}
+std::string  SerialPort::getOpenSDADevicePath(){
+    std::string openSDADevicePath;
+    std::string path = "/dev/";
+    std::regex devicePattern("ttyACM[0-9]+");
+
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        std::string deviceName = entry.path().filename().string();
+        if (std::regex_match(deviceName, devicePattern)) {
+            openSDADevicePath = entry.path().string();
+            break;  // Exit loop after finding the first matching device
+        }
+    }
+
+    return openSDADevicePath;
 }
