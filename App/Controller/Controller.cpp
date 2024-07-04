@@ -110,6 +110,8 @@ std::vector<MediaFile>& Controller::parseTabtofiles(){
     if(view.gettab() == VIDEO){
         return model.getMetadataofvideo();
     }
+    // Thêm một giá trị trả về mặc định hoặc xử lý lỗi
+    throw std::runtime_error("Invalid tab selected");
 }
 std::vector<std::string>& Controller::parseTabtofilepaths(){
     if(view.gettab() == HOME){
@@ -121,6 +123,8 @@ std::vector<std::string>& Controller::parseTabtofilepaths(){
     if(view.gettab() == VIDEO){
         return model.getvideofilepath();
     }
+    // Thêm một giá trị trả về mặc định hoặc xử lý lỗi
+    throw std::runtime_error("Invalid tab selected");
 }
 void Controller::handleSetDirectory(const std::string& directory) {
     cur_dir = directory;
