@@ -1,6 +1,6 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
-
+#include "UART.h"
 #include "Model.h"
 #include "View.h"
 #include "Player.h"
@@ -38,6 +38,10 @@ private:
     std::stack<Tab> tabHistory;
     static Player* playerptr;
     std::string cur_dir;
+    SerialPort sp;
+    std::atomic<bool> serial_command_received;
+    char serial_command;
+    std::mutex command_mutex;
 };
 
 #endif // CONTROLLER_H
