@@ -9,7 +9,7 @@ public:
     ~SerialPort();
     bool configure();
     std::string readData();
-    std::string getOpenSDADevicePath();
+    static std::string getOpenSDADevicePath();
 
 private:
     int serial_port;
