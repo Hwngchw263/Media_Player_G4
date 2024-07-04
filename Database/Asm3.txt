@@ -1,0 +1,16 @@
+////////////////////Data Structure and algorithms////////////////////////////
+Viết 1 chương trình quản lý thông tin lớp fresher bao gồm:
+-	Mã số học viên
+-	Họ Tên
+-	Account
+-	Điểm trung bình
+Yêu cầu:
+-   Sử dụng linked list đơn để quản lý danh sách
+-   Có chức năng để thêm 1 sinh viên vào vị trí bất kỳ
+-   Có chức năng để xóa 1 sinh viên tại vị trí bất kỳ
+-   Có chức năng để hiện thị ra thông tin của toàn bộ sinh viên
+-   Có chức năng tìm kiếm tên viên sinh và show ra toàn bộ information nếu match
+-   Có chức năng để sắp xếp sinh viên theo
+o	  Điểm trung bình
+o	  Tên
+/////////////////////////////////////////////////////////////////////////////
