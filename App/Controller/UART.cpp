@@ -19,11 +19,14 @@ SerialPort::SerialPort(const char* port) {
 SerialPort::~SerialPort() {
     close(serial_port);
 }
-
+// void SerialPort::sendfirstdata(const char* data){
+//     write(serial_port, data, strlen(data));
+// }
 bool SerialPort::configure() {
     struct termios tty;
     if (tcgetattr(serial_port, &tty) != 0) {
         std::cerr << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
+       
         return false;
     }
 
@@ -45,7 +48,7 @@ bool SerialPort::configure() {
     tty.c_oflag &= ~OPOST;
     tty.c_oflag &= ~ONLCR;
 
-    tty.c_cc[VTIME] = 1;
+    tty.c_cc[VTIME] = 10;
     tty.c_cc[VMIN] = 0;
 
     cfsetispeed(&tty, B9600);
@@ -53,28 +56,51 @@ bool SerialPort::configure() {
 
     if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
         std::cerr << "Error " << errno << " from tcsetattr: " << strerror(errno) << std::endl;
+        
         return false;
     }
 
     return true;
 }
-
-std::string SerialPort::readData() {
-    char read_buf[256];
-    memset(&read_buf, '\0', sizeof(read_buf));
-    int num_bytes = read(serial_port, &read_buf, sizeof(read_buf));
-    
-    if (num_bytes < 0) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            std::cerr << "Error reading: " << strerror(errno) << std::endl;
-        }
-        return "";
-    } else if (num_bytes > 0) {
-        return std::string(read_buf, num_bytes);
-    }
-
-    return "";
+void SerialPort::sendData(const char* data) {
+    write(serial_port, data, strlen(data));
 }
+std::string SerialPort::receiveData() {
+      char buffer[BUFFER_SIZE +1]; // thêm 1 để chứa ký tự null
+     int index = 0;
+
+    // Đọc đúng 4 ký tự
+    while (index < BUFFER_SIZE) {
+        int bytes_read = read(serial_port, &buffer[index], 1);
+        if (bytes_read < 0) {
+            std::cerr << "Error reading from serial port: " << strerror(errno) << std::endl;
+            break;
+        } else if (bytes_read > 0) {
+            index++;
+        }
+    }
+    buffer[index] = '\0'; // Kết thúc chuỗi bằng ký tự null
+    
+    return std::string(buffer);
+    //buffer[BUFFER_SIZE] = '\0'; // Null-terminate the string
+    //std::cout << "Received: " << buffer << std::endl;
+    
+    // char read_buf[256];
+    // memset(&read_buf, '\0', sizeof(read_buf));
+    // int num_bytes = read(serial_port, &read_buf, sizeof(read_buf));
+
+    // if (num_bytes < 0) {
+    //     if (errno != EAGAIN && errno != EWOULDBLOCK) {
+    //         std::cerr << "Error reading: " << strerror(errno) << std::endl;
+    //     }
+    //     return "";
+    // } else if (num_bytes > 0) {
+    //     return std::string(read_buf, num_bytes);
+    // }
+
+    // return "";
+}
+
 std::string  SerialPort::getOpenSDADevicePath(){
     std::string openSDADevicePath;
     std::string path = "/dev/";
