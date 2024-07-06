@@ -3,7 +3,26 @@
 #include <SDL2/SDL.h>
 
 Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2) {
-    SDL_Init(SDL_INIT_AUDIO);
+    //SDL_Init(SDL_INIT_AUDIO);
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+    {
+        std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+        // Handle SDL initialization error
+    }
+    // Initialize SDL_Mixer and check for errors
+    int mix_flags = MIX_INIT_FLAC | MIX_INIT_MOD | MIX_INIT_MP3 | MIX_INIT_OGG;
+    int initialized_flags = Mix_Init(mix_flags);
+    if ((initialized_flags & mix_flags) != mix_flags)
+        {
+            std::cerr << "Mix_Init Error: " << Mix_GetError() << std::endl;
+            // Handle SDL_Mixer initialization error
+        }
+    // Initialize SDL_Mixer audio settings
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1)
+        {
+            std::cerr << "Mix_OpenAudio Error: " << Mix_GetError() << std::endl;
+            // Handle SDL_Mixer audio initialization error
+        }
 }
 
 Player::~Player() {

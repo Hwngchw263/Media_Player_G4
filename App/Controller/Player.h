@@ -21,6 +21,10 @@
 #include <mutex>
 #include <ctime>
 #include "Mediafile.h"
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
+#include <libswresample/swresample.h>
+
 namespace fs = std::filesystem;
 
 
@@ -51,7 +55,8 @@ public:
 private: 
     void RepeatOneSong();
     void RepaetAllSong();
-    std::thread playThread;
+    void audioThread(const std::string& filePath);
+    std::thread playerThread;
     std::atomic<bool> isPlaying;
     std::atomic<bool> isPaused;
     int volume;
