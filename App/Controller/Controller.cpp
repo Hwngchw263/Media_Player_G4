@@ -197,6 +197,7 @@ void Controller::handlePlay() {
     std::cout << "Enter song to play:" ;
     int num;
     std::cin >> num; 
+    
     player.setTrack((num - 1));
     player.setSonglist(parseTabtofilepaths());
     player.setMediafile(parseTabtofiles());
