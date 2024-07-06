@@ -30,9 +30,9 @@ Controller::Controller():sp(SerialPort::getOpenSDADevicePath().c_str()), serial_
     }
 }
 char Controller::ParseData(std::string& message){
-            //serial_command = '\0';
+            serial_command = '\0';
             //std::lock_guard<std::mutex> lock(command_mutex);
-            if (message == "2"  ||message == "1"|| message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
+            if (message == "2"||message =="1" || message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
                 serial_command = message[0];           
             } 
             return serial_command;          
@@ -75,8 +75,9 @@ void Controller::run(){
             // }
             if (!message.empty()) {
             //serial_command_received = true;
-            serial_command = ParseData(message);
-            handleInput(serial_command);  
+            //serial_command = ParseData(message);
+            handleInput(ParseData(message)); 
+            //std::cout << "Received message: " << message << std::endl; 
             //serial_command_received = false;
             }   
             std::this_thread::sleep_for(std::chrono::milliseconds(500));   
@@ -200,6 +201,49 @@ void Controller::handlePlay() {
     player.setSonglist(parseTabtofilepaths());
     player.setMediafile(parseTabtofiles());
     player.play(parseTabtofilepaths()[num - 1]);
+    // std::cout << "Enter song to play (or wait for serial command): ";
+    
+    // int num = -1;
+    // bool valid_input = false;
+    // auto start = std::chrono::steady_clock::now();
+
+    // while (!valid_input) {
+    //     // Check if there's input from std::cin
+    //     if (std::cin.rdbuf()->in_avail() > 0) {
+    //         std::cin >> num;
+    //         valid_input = true;
+    //     }
+    //     std::string message = sp.receiveData() ;
+    //     // Check if there's input from serial_command
+    //     if (!message.empty()) {
+    //         serial_command = ParseData(message);
+    //         try {
+    //             num = std::stoi(serial_command);
+    //             valid_input = true;
+    //         } catch (const std::invalid_argument& e) {
+    //             std::cerr << "Invalid serial command input." << std::endl;
+    //         }
+    //     }
+
+    //     // Timeout after 5 seconds
+    //     auto now = std::chrono::steady_clock::now();
+    //     if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() > 5) {
+    //         std::cout << "No input received within 5 seconds." << std::endl;
+    //         break;
+    //     }
+        
+    //     // Sleep to avoid busy-waiting
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // }
+
+    // if (num > 0) {
+    //     player.setTrack(num - 1);
+    //     player.setSonglist(parseTabtofilepaths());
+    //     player.setMediafile(parseTabtofiles());
+    //     player.play(parseTabtofilepaths()[num - 1]);
+    // } else {
+    //     std::cout << "Invalid song number." << std::endl;
+    // }
 }
 
 void Controller::handlePause() {
