@@ -58,7 +58,7 @@ private:
     bool stopflag = false;
     MusicData music_Data;
     std::vector<MediaFile> mediafile;
-    const int Volume_Step = 1;
+    const int Volume_Step = 10;
     bool repeatSingleSong = false;
 };
 
