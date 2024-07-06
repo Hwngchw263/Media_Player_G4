@@ -46,6 +46,8 @@ private:
     char serial_command;
     std::mutex command_mutex;
     std::atomic<bool> is_playing;
+    std::atomic<bool> Cin_thread ;
+    std::atomic<bool> MCU_thread;
     char ParseData(std::string& message);
    
 };
