@@ -32,6 +32,21 @@ Controller::Controller():sp(SerialPort::getOpenSDADevicePath().c_str()), serial_
 char Controller::ParseData(std::string& message){
             serial_command = '\0';
             //std::lock_guard<std::mutex> lock(command_mutex);
+            // switch (message)
+            // {
+            // case "1":
+            // case "2":
+            // case "3":
+            // case "4":
+            // case "5":
+            // case "6":
+            // case "+":
+            // case "-":
+            //    serial_command = message[0];
+            //     break;
+            // default:
+            //     break;
+            // }
             if (message == "2"||message =="1" || message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
                 serial_command = message[0];           
             } 
@@ -56,34 +71,81 @@ void Controller::run(){
     //     std::cin >> cmd;
     //     handleInput(cmd);
     // }
+    //sp.sendData("abcd");
+    // Thread for handling serial input
+   // std::thread serial_thread([&]() {
+    //     while (true) {   
+    //             std::string message = sp.receiveData() ;
+    //         //     if (!message.empty()) {
+    //         //     std::lock_guard<std::mutex> lock(command_mutex);
+    //         //     if (message == "2"  || message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
+    //         //         serial_command = message[0];
+    //         //         serial_command_received = true;
+    //         //         handleInput(serial_command);
+    //         //         //handleHomeTabCommand(serial_command,page_num); // Handle HomeTab specific commands
+    //         //         serial_command_received = false;
+    //         //     } else {
+    //         //         std::cout << "Received message: " << message << std::endl;
+    //         //     }
+    //         // }
+    //         if (!message.empty()) {
+    //         //serial_command_received = true;
+    //         //serial_command = ParseData(message);
+    //         handleInput(ParseData(message)); 
+    //         //std::cout << "Received message: " << message << std::endl; 
+    //         //serial_command_received = false;
+    //         }   
+    //         std::this_thread::sleep_for(std::chrono::milliseconds(500));   
+    //     }
+    // });
+    // serial_thread.join();
+      //Send data ro reset in MCU
     sp.sendData("abcd");
+   
+    std::thread input_thread([&]() {
+        Cin_thread = true;
+        MCU_thread = false;
+        while (true) {
+             char cmd;
+                std::cout << "Enter command: ";
+            //EnterCharInput(command);
+                std::cin >> cmd;
+            {
+                std::lock_guard<std::mutex> lock(command_mutex);
+                std::cout<<"\nben cin \n";
+                if (!serial_command_received) {
+                    handleInput(cmd);
+                    //handleHomeTabCommand(command,page_num); // Handle HomeTab specific commands
+                }
+            }
+            
+            
+        }
+    });
+
     // Thread for handling serial input
     std::thread serial_thread([&]() {
+        Cin_thread = false;
+        MCU_thread = true;
         while (true) {   
-                std::string message = sp.receiveData() ;
-            //     if (!message.empty()) {
-            //     std::lock_guard<std::mutex> lock(command_mutex);
-            //     if (message == "2"  || message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
-            //         serial_command = message[0];
-            //         serial_command_received = true;
-            //         handleInput(serial_command);
-            //         //handleHomeTabCommand(serial_command,page_num); // Handle HomeTab specific commands
-            //         serial_command_received = false;
-            //     } else {
-            //         std::cout << "Received message: " << message << std::endl;
-            //     }
-            // }
+            //Receive data from UART
+            std::string message = sp.receiveData();
             if (!message.empty()) {
-            //serial_command_received = true;
-            //serial_command = ParseData(message);
-            handleInput(ParseData(message)); 
-            //std::cout << "Received message: " << message << std::endl; 
-            //serial_command_received = false;
+            std::lock_guard<std::mutex> lock(command_mutex);
+            std::cout<<"\nben mcu\n";
+            serial_command_received = true;
+            handleInput(ParseData(message));
+            
             }   
+
+            serial_command_received = false;
             std::this_thread::sleep_for(std::chrono::milliseconds(500));   
         }
     });
     serial_thread.join();
+    input_thread.join();
+    
+    //Second thread Cin
 }
 void Controller::handleInput(const char& input) {
     playerptr = &player;
@@ -196,7 +258,23 @@ void Controller::handleSetDirectory(const std::string& directory) {
 void Controller::handlePlay() {
     std::cout << "Enter song to play:" ;
     int num;
-    std::cin >> num; 
+    if(MCU_thread == true){
+        //Receive data from UART
+        std::string data;
+        std::cout << "MCU_thread." << std::endl;
+        while(data[0] == '\0'){
+           data = sp.receiveData();
+        }
+        std::cout << "This:" << data << std::endl;
+        num = ParseData(data) - '0'; //edit
+        std::cout << num << std::endl;
+    }
+    else if(Cin_thread == true){
+        std::cin >> num; 
+    }
+    // std::cout << "Enter song to play:" ;
+    // int num;
+    // std::cin >> num; 
     
     player.setTrack((num - 1));
     player.setSonglist(parseTabtofilepaths());
