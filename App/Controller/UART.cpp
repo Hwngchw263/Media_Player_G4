@@ -66,22 +66,63 @@ void SerialPort::sendData(const char* data) {
     write(serial_port, data, strlen(data));
 }
 std::string SerialPort::receiveData() {
-      char buffer[BUFFER_SIZE +1]; // thêm 1 để chứa ký tự null
-     int index = 0;
+    //   char buffer[BUFFER_SIZE +1]; // thêm 1 để chứa ký tự null
+    //  int index = 0;
 
-    // Đọc đúng 4 ký tự
-    while (index < BUFFER_SIZE) {
-        int bytes_read = read(serial_port, &buffer[index], 1);
-        if (bytes_read < 0) {
-            std::cerr << "Error reading from serial port: " << strerror(errno) << std::endl;
-            break;
-        } else if (bytes_read > 0) {
-            index++;
-        }
-    }
-    buffer[index] = '\0'; // Kết thúc chuỗi bằng ký tự null
+    // // Đọc đúng 4 ký tự
+    // while (index < BUFFER_SIZE) {
+    //     int bytes_read = read(serial_port, &buffer[index], 1);
+    //     if (bytes_read < 0) {
+    //         std::cerr << "Error reading from serial port: " << strerror(errno) << std::endl;
+    //         break;
+    //     } else if (bytes_read > 0) {
+    //         index++;
+    //     }
+    // }
+    // buffer[index] = '\0'; // Kết thúc chuỗi bằng ký tự null
     
+    // return std::string(buffer);
+
+  char buffer[BUFFER_SIZE + 1]; // thêm 1 để chứa ký tự null
+    int index = 0;
+
+    fd_set readfds;
+    struct timeval timeout;
+
+    FD_ZERO(&readfds);
+    FD_SET(serial_port, &readfds);
+
+    timeout.tv_sec = 1; // 1 second timeout
+    timeout.tv_usec = 0;
+
+    int ret = select(serial_port + 1, &readfds, NULL, NULL, &timeout);
+
+    if (ret > 0 && FD_ISSET(serial_port, &readfds)) {
+        // Đọc đúng 4 ký tự
+        while (index < BUFFER_SIZE) {
+            int bytes_read = read(serial_port, &buffer[index], 1);
+            if (bytes_read < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    // Không có dữ liệu sẵn sàng, dừng đọc
+                    break;
+                } else {
+                    std::cerr << "Error reading from serial port: " << strerror(errno) << std::endl;
+                    break;
+                }
+            } else if (bytes_read > 0) {
+                index++;
+            }
+        }
+    } else if (ret < 0) {
+        std::cerr << "Error " << errno << " from select: " << strerror(errno) << std::endl;
+    } else {
+        //std::cerr << "No data available to read." << std::endl;
+    }
+
+    buffer[index] = '\0'; // Kết thúc chuỗi bằng ký tự null
+
     return std::string(buffer);
+
     //buffer[BUFFER_SIZE] = '\0'; // Null-terminate the string
     //std::cout << "Received: " << buffer << std::endl;
     
