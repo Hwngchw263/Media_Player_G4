@@ -18,6 +18,7 @@ public:
     void displayMetadata(std::vector<MediaFile>& files);
     void displayHelp();
     void displayPage(std::vector<std::string>& files);
+    void displaySelection();
     int getpage();
     void setpage(int page);
     Tab gettab();

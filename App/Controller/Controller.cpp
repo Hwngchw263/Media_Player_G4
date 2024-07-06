@@ -4,7 +4,38 @@
 #include <algorithm>
 
 Player *Controller::playerptr = nullptr;
-Controller::Controller(){
+Controller::Controller():sp(SerialPort::getOpenSDADevicePath().c_str()), serial_command_received(false){
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+        {
+            std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+            // Handle SDL initialization error
+        }
+    // Initialize SDL_Mixer and check for errors
+    int mix_flags = MIX_INIT_FLAC | MIX_INIT_MOD | MIX_INIT_MP3 | MIX_INIT_OGG;
+    int initialized_flags = Mix_Init(mix_flags);
+    if ((initialized_flags & mix_flags) != mix_flags)
+        {
+            std::cerr << "Mix_Init Error: " << Mix_GetError() << std::endl;
+            // Handle SDL_Mixer initialization error
+        }
+    // Initialize SDL_Mixer audio settings
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1)
+        {
+            std::cerr << "Mix_OpenAudio Error: " << Mix_GetError() << std::endl;
+            // Handle SDL_Mixer audio initialization error
+        }
+     if (!sp.configure()) {
+        std::cerr << "Failed to configure serial port" << std::endl;
+        std::exit(1);  // Exit if configuration fails
+    }
+}
+char Controller::ParseData(std::string& message){
+            serial_command = '\0';
+            //std::lock_guard<std::mutex> lock(command_mutex);
+            if (message == "2"||message =="1" || message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
+                serial_command = message[0];           
+            } 
+            return serial_command;          
 }
 Controller::~Controller(){
     // Quit SDL_Mixer
@@ -18,27 +49,83 @@ void Controller::MusicFinishedCallbackWrapper()
 {
     playerptr->FunctionCallback();
 }
+void Controller::run(){
+    // Send data to reset in MCU
+    sp.sendData("abcd");
+    std::thread serial_input_thread(&Controller::getInputFromSerial, this);
+    std::thread cin_input_thread(&Controller::getInputFromCin, this);
+    std::thread task_thread(&Controller::executeTask, this);
+    serial_input_thread.join();
+    cin_input_thread.join();
+    running = false;
+    condition.notify_one(); 
+    task_thread.join();
+}
 
+void Controller::getInputFromSerial() {
+    while (running) {
+        std::string message = sp.receiveData();
+        if (!message.empty()) {
+            std::lock_guard<std::mutex> lock(queueMutex);
+            taskQueue.push(message);
+            condition.notify_one(); 
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+}
+
+void Controller::getInputFromCin() {
+    while (running) {
+        std::string cmd;
+        std::getline(std::cin, cmd);
+        if (!cmd.empty()) {
+            std::lock_guard<std::mutex> lock(queueMutex); // Lock mutex
+            taskQueue.push(cmd);
+            condition.notify_one(); // Thức tỉnh thread xử lý task để xử lý dữ liệu mới
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+}
+
+void Controller::executeTask() {
+    while (running) {
+        std::string task;
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            condition.wait(lock, [&] { return !taskQueue.empty(); });
+            task = taskQueue.front();
+            taskQueue.pop();
+        }
+        char parsedCmd = ParseData(task);
+        handleInput(parsedCmd);
+    }
+}
 void Controller::handleInput(const char& input) {
     playerptr = &player;
     Mix_HookMusicFinished(MusicFinishedCallbackWrapper);
     switch (input) {
         case '1':
+            std::cout<<"\nplay mode\n";
             handlePlay();
             break;
         case '2':
+            std::cout<<"\npause music\n";
             handlePause();
             break;
         case '3':
+            std::cout<<"\nresume music\n";
             handleResume();
             break;
         case '4':
+            std::cout<<"\nstop music\n";
             handleStop();
             break;
         case '5':
+            std::cout<<"\nnext music\n";
             handleNext();
             break;
-       case '6':
+        case '6':
+            std::cout<<"\nprevious music\n";
             handlePrevious();
             break;           
         case '+':
@@ -50,25 +137,25 @@ void Controller::handleInput(const char& input) {
         case 'q':
             handleExit();
             break;
-        case 'F':
+        case 'h':
             handleSwitchTab(HOME);
             break;
-        case 'R':
+        case 'm':
             handleSwitchTab(MUSIC);
             break;
-        case 'D':
+        case 'v':
             handleSwitchTab(VIDEO);
             break;
-        case 'x':
+        case 'e':
             handleEditMetadata();
             break;
-        case 'n':
+        case '>':
             handleNextPage();
             break;
-        case 'l':
+        case '<':
             handlePrevPage();
             break;
-        case 'm':
+        case 'd':
             handleRemoveFile();
             break;
         case 'b':
@@ -91,6 +178,8 @@ std::vector<MediaFile>& Controller::parseTabtofiles(){
     if(view.gettab() == VIDEO){
         return model.getMetadataofvideo();
     }
+    // Thêm một giá trị trả về mặc định hoặc xử lý lỗi
+    throw std::runtime_error("Invalid tab selected");
 }
 std::vector<std::string>& Controller::parseTabtofilepaths(){
     if(view.gettab() == HOME){
@@ -102,6 +191,8 @@ std::vector<std::string>& Controller::parseTabtofilepaths(){
     if(view.gettab() == VIDEO){
         return model.getvideofilepath();
     }
+    // Thêm một giá trị trả về mặc định hoặc xử lý lỗi
+    throw std::runtime_error("Invalid tab selected");
 }
 void Controller::handleSetDirectory(const std::string& directory) {
     cur_dir = directory;
@@ -116,9 +207,13 @@ void Controller::handleSetDirectory(const std::string& directory) {
 }
 
 void Controller::handlePlay() {
-    std::cout << "Enter song to play:" ;
     int num;
-    std::cin >> num; 
+    std::cout << "Enter song to play:" ;
+    std::unique_lock<std::mutex> lock(queueMutex);
+    condition.wait(lock, [&] { return !taskQueue.empty(); });
+    std::string task = taskQueue.front();
+    taskQueue.pop();
+    num = ParseData(task) - '0';
     player.setTrack((num - 1));
     player.setSonglist(parseTabtofilepaths());
     player.setMediafile(parseTabtofiles());
@@ -289,7 +384,6 @@ void Controller::handleBack() {
     }
     view.displayMetadata(parseTabtofiles());
 }
-
 
 
 
