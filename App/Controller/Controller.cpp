@@ -29,6 +29,14 @@ Controller::Controller():sp(SerialPort::getOpenSDADevicePath().c_str()), serial_
         std::exit(1);  // Exit if configuration fails
     }
 }
+char Controller::ParseData(std::string& message){
+            //serial_command = '\0';
+            //std::lock_guard<std::mutex> lock(command_mutex);
+            if (message == "2"  ||message == "1"|| message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
+                serial_command = message[0];           
+            } 
+            return serial_command;          
+}
 Controller::~Controller(){
     // Quit SDL_Mixer
     Mix_CloseAudio();
@@ -41,27 +49,69 @@ void Controller::MusicFinishedCallbackWrapper()
 {
     playerptr->FunctionCallback();
 }
-
+void Controller::run(){
+    // while (true) {
+    //     std::cout << "Enter command: ";
+    //     char cmd;
+    //     std::cin >> cmd;
+    //     handleInput(cmd);
+    // }
+    sp.sendData("abcd");
+    // Thread for handling serial input
+    std::thread serial_thread([&]() {
+        while (true) {   
+                std::string message = sp.receiveData() ;
+            //     if (!message.empty()) {
+            //     std::lock_guard<std::mutex> lock(command_mutex);
+            //     if (message == "2"  || message == "3" || message == "4"||message == "5"||message == "6"||message == "+"|| message == "-") {
+            //         serial_command = message[0];
+            //         serial_command_received = true;
+            //         handleInput(serial_command);
+            //         //handleHomeTabCommand(serial_command,page_num); // Handle HomeTab specific commands
+            //         serial_command_received = false;
+            //     } else {
+            //         std::cout << "Received message: " << message << std::endl;
+            //     }
+            // }
+            if (!message.empty()) {
+            //serial_command_received = true;
+            serial_command = ParseData(message);
+            handleInput(serial_command);  
+            //serial_command_received = false;
+            }   
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));   
+        }
+    });
+    serial_thread.join();
+}
 void Controller::handleInput(const char& input) {
     playerptr = &player;
     Mix_HookMusicFinished(MusicFinishedCallbackWrapper);
     switch (input) {
         case '1':
+            std::cout<<"\nplay mode\n";
+            //is_playing = true;
             handlePlay();
+            //is_playing = false;
             break;
         case '2':
+            std::cout<<"\npause music\n";
             handlePause();
             break;
         case '3':
+            std::cout<<"\nresume music\n";
             handleResume();
             break;
         case '4':
+            std::cout<<"\nstop music\n";
             handleStop();
             break;
         case '5':
+            std::cout<<"\nnext music\n";
             handleNext();
             break;
        case '6':
+            std::cout<<"\nprevious music\n";
             handlePrevious();
             break;           
         case '+':
