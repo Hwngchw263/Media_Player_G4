@@ -2,7 +2,7 @@
 #define UART_H
 
 #include <string>
-#define BUFFER_SIZE 4
+#define BUFFER_SIZE 8
 class SerialPort {
 public:
     SerialPort(const char* port);

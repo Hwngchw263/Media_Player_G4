@@ -51,7 +51,7 @@ void Controller::MusicFinishedCallbackWrapper()
 }
 void Controller::run(){
     // Send data to reset in MCU
-    sp.sendData("abcd");
+    sp.sendData("a");
     std::thread serial_input_thread(&Controller::getInputFromSerial, this);
     std::thread cin_input_thread(&Controller::getInputFromCin, this);
     std::thread task_thread(&Controller::executeTask, this);
@@ -64,11 +64,30 @@ void Controller::run(){
 
 void Controller::getInputFromSerial() {
     while (running) {
+        //Get message
         std::string message = sp.receiveData();
+        // std::cout << message << std::endl;
         if (!message.empty()) {
             std::lock_guard<std::mutex> lock(queueMutex);
-            taskQueue.push(message);
-            condition.notify_one(); 
+            mcu_data.ParseMessage(message);
+            //Verify message
+            if(mcu_data.VerifyMessage(mcu_data.getmess())){
+                //std::cout << "Message true." << std::endl;
+                if(mcu_data.getmess().type == 'A'){
+                    mode  = mcu_data.PareMode(mcu_data.getmess().data);
+                    //std::cout << "Mode: " << mode << std::endl;
+                }
+                else if(mcu_data.getmess().type==  'E'){
+                    //convert type to string
+                    taskQueue.push(std::string(1, 'E'));
+                    condition.notify_one(); 
+                }
+            }
+            else{
+                std::cout << "Message fall. Send again" << std::endl;
+                //Request MCU send again
+
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
@@ -79,9 +98,9 @@ void Controller::getInputFromCin() {
         std::string cmd;
         std::getline(std::cin, cmd);
         if (!cmd.empty()) {
-            std::lock_guard<std::mutex> lock(queueMutex); // Lock mutex
+            std::lock_guard<std::mutex> lock(queueMutex); 
             taskQueue.push(cmd);
-            condition.notify_one(); // Thức tỉnh thread xử lý task để xử lý dữ liệu mới
+            condition.notify_one(); 
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
@@ -96,8 +115,23 @@ void Controller::executeTask() {
             task = taskQueue.front();
             taskQueue.pop();
         }
-        char parsedCmd = ParseData(task);
-        handleInput(parsedCmd);
+        //If task == "E" enter mode (run with input from MCU)
+        if(task == "E"){
+            std::cout << "Run from MCU." << std::endl;
+            //Run mode
+            {
+                std::lock_guard<std::mutex> lock(queueMutex); 
+                std::cout << "Mode: " << mode << std::endl;
+                handleInput(mode);
+            }
+            }
+        //Run with input from Cin
+        else{
+            std::cout << "Run from cin." << std::endl;
+            //Set current mode
+            mode = task[0];
+            handleInput(task[0]);
+        }
     }
 }
 void Controller::handleInput(const char& input) {
@@ -207,16 +241,37 @@ void Controller::handleSetDirectory(const std::string& directory) {
 }
 
 void Controller::handlePlay() {
-    int num;
     std::cout << "Enter song to play:" ;
+    int num;
+    //Get data from queue
     std::unique_lock<std::mutex> lock(queueMutex);
     condition.wait(lock, [&] { return !taskQueue.empty(); });
     std::string task = taskQueue.front();
     taskQueue.pop();
-    num = ParseData(task) - '0';
+        //If task == "E" enter mode (run with input from MCU)
+    if(task == "E"){
+        std::cout << "Run from MCU." << std::endl;
+        //Run mode
+        {
+            std::lock_guard<std::mutex> lock(datafield_mutex); 
+            num = mcu_data.getmess().data;
+        }
+        }
+        
+    //Run with input from Cin
+    else{
+        std::cout << "Run from cin." << std::endl;
+        num = std::stoi(task);
+    }
+    //Convert from string to interger
+    
+    //Set current track
     player.setTrack((num - 1));
+    //Set current songlist
     player.setSonglist(parseTabtofilepaths());
+    //Set current file list
     player.setMediafile(parseTabtofiles());
+    //Play song
     player.play(parseTabtofilepaths()[num - 1]);
 }
 

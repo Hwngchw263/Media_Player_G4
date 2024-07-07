@@ -4,6 +4,7 @@
 #include "Model.h"
 #include "View.h"
 #include "Player.h"
+#include "Message.h"
 #include <stack>
 #include <string>
 #include <condition_variable>
@@ -38,6 +39,7 @@ private:
     Model model;
     View view;
     Player player;
+    DATAMCU mcu_data;
     std::stack<Tab> tabHistory;
     static Player* playerptr;
     std::string cur_dir;
@@ -47,17 +49,16 @@ private:
     SerialPort sp;
     std::atomic<bool> serial_command_received;
     std::mutex flag_mutex;
-    bool MCU_thread = false;
-    bool Cin_thread = false;
     char serial_command;
-    std::mutex command_mutex;
+    std::mutex mode_mutex;
+    std::mutex datafield_mutex;
     std::atomic<bool> is_playing;
     char ParseData(std::string& message);
     std::queue<std::string> taskQueue;
     std::mutex queueMutex;
     std::condition_variable condition;
     bool running = true;
-   
+    char mode = '1';
 };
 
 #endif // CONTROLLER_H
