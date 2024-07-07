@@ -3,6 +3,8 @@
 
 #include <string>
 #define BUFFER_SIZE 4
+
+
 class SerialPort {
 public:
     SerialPort(const char* port);
@@ -12,6 +14,7 @@ public:
     static std::string getOpenSDADevicePath();
     void sendData(const char* data);
     static void sendfirstdata(const char* data);
+    
     //ham send o day 
 
 
