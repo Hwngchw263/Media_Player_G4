@@ -17,8 +17,6 @@ typedef struct {
     uint8_t checksum;
 } Message;
 
-
-
 class DATAMCU{
     private:
         Message mess;
@@ -27,8 +25,6 @@ class DATAMCU{
         //constructor
        DATAMCU();
        ~DATAMCU();   
-        
-          
         uint8_t calculateChecksum( uint16_t data);
         //create kieu la message hay string
         void createMessage(char type, uint16_t data);
@@ -41,9 +37,17 @@ class DATAMCU{
 
         uint8_t Convert_Char_To_Hex(uint8_t ch_in);
         uint32_t StrtoHex(std::string& ptr, uint8_t len);
+        //convert uint8_t to hex 
+        void uint8ToHexString(uint8_t value, char *str);
+        //convert uint16_t to hex
+        void uint16toHexString(uint16_t value , char *str);
+        //convert Message to string (nhu mcu)
+        void messageToString( char *str) ;
+
+        std::string messageToString();
 
         //tao string gui xuong , return string, input msg
-        //convert Message to string (nhu mcu)
+        
 };
 
 
