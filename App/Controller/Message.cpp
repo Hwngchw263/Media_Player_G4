@@ -1,117 +1,107 @@
 #include "Message.h"
-DATAMCU ::DATAMCU(){}
-DATAMCU::~DATAMCU(){}
+DATAMCU ::DATAMCU() {}
+DATAMCU::~DATAMCU() {}
 
-//calculate sum each byte in data
-//exx : data = 12 (deca)
-//convet 12 to 0x000C (number = 2byte)
-
-uint8_t DATAMCU::calculateChecksum( uint16_t data){
-    //data_high = 1100 chuyen thanh 0000
+// Function to calculate checksum
+uint8_t DATAMCU::calculateChecksum(uint16_t data)
+{
+    // data_high
     uint8_t data_high = (data >> 8) & 0xFF;
-    //data_low =1100
-	uint8_t data_low = data & 0xFF;
-	uint8_t sum= data_high + data_low;
-    return ~sum +1;
+    // data_low
+    uint8_t data_low = data & 0xFF;
+    uint8_t sum = data_high + data_low;
+    return ~sum + 1;
 }
-//create message
-void DATAMCU::createMessage(char type, uint16_t data) {
-    //Message msg;
-    mess.type =type;
+
+// Function to create message
+void DATAMCU::createMessage(char type, uint16_t data)
+{
+    // Message msg;
+    mess.type = type;
     mess.data = data;
     mess.checksum = calculateChecksum(data);
 }
 
-
-
-bool DATAMCU::VerifyMessage(Message& msg){
+// Function to verify message
+bool DATAMCU::VerifyMessage(Message &msg)
+{
     uint8_t check = msg.checksum;
-    if(check == calculateChecksum(msg.data)){
+    if (check == calculateChecksum(msg.data))
+    {
         return true;
     }
     return false;
 }
 
-char DATAMCU::ParseMessage(std::string& receiver_data){  
-    if(!receiver_data.empty()){
-        //create type 
-        std::string first = receiver_data.substr(0,2);
-        //change type to hex ( uint_8)
-        char type =  (char)StrtoHex(first,2);
-     
-        std::string second = receiver_data.substr(2,4);
-        uint16_t data = (uint16_t)StrtoHex(second,4);
-        //save message data structure
-        createMessage(type,data);
+// Function to parse message
+char DATAMCU::ParseMessage(std::string &receiver_data)
+{
+    if (!receiver_data.empty())
+    {
+        // create type
+        std::string first = receiver_data.substr(0, 2);
+        // change type to hex ( uint_8)
+        char type = (char)std::stoi(first);
+        std::string second = receiver_data.substr(2, 4);
+        uint16_t data = (uint16_t)stoi(second);
+        // save message data structure
+        createMessage(type, data);
     }
 }
-Message& DATAMCU::getmess(){
+
+// Function to get message
+Message &DATAMCU::getmess()
+{
     return this->mess;
 }
-
-uint8_t DATAMCU::Convert_Char_To_Hex(uint8_t ch_in) {
-    //input is char 
-	uint8_t hex_out = Hex_Error;
-	if (('0' <= ch_in) && (ch_in <= '9'))
-    
-	{//convert 0-9 acsii to 0-9 hex
-		hex_out = ch_in - '0';
-	}
-	else if (('A' <= ch_in) && (ch_in <= 'F'))
-	{
-    //convert A-F acsii to A-F hex
-		hex_out = ch_in - 'A' + 0xA;
-	}
-	return hex_out;
-}
-uint32_t DATAMCU::StrtoHex(std::string& ptr, uint8_t len)
-{   //input string is char* ptr
-	//Syntax_Type state = SYNTAX_TRUE;
-    //len : number want to convert
-    uint32_t  pHexa =0;
-	uint8_t idx,c;
-    //output result is pHexa
-	
-	for (idx = 0; idx < len; idx++)
-	{
-		c = Convert_Char_To_Hex(ptr[idx]);
-        //if can't read break
-		if (16 == c)
-		{
-			//state = SYNTAX_FLASE;
-			break;
-		}
-		pHexa += c * pow(16,(len - 1 - idx));
-	}
-	//return state;
-    return pHexa;
-}
-char DATAMCU::PareMode(uint16_t value){
-    const char hexDigits[] = "0123456789ABCDEF";
-    return hexDigits[value & 0x0F];
-}
-void DATAMCU::uint8toHexString(uint8_t value, char *str) {
-    const char hexDigits[] = "0123456789ABCDEF";
-    str[0] = hexDigits[(value >> 4) & 0x0F];
-    str[1] = hexDigits[value & 0x0F];
-    str[2] = '\0';
+// Function parse data to take mode
+char DATAMCU::PareMode(uint16_t value, uint8_t total_mode)
+{
+    uint8_t mode = value % total_mode;
+    if (mode >= 0 && mode <= 9)
+    {
+        return static_cast<char>('0' + mode);
+    }
+    else if (mode >= 10 && mode <= 15)
+    {
+        return static_cast<char>('A' + (mode - 10));
+    }
+    else
+    {
+        return '?';
+    }
 }
 
-void DATAMCU::uint16toHexString(uint16_t value , char *str){
-	const char hexDigits[] = "0123456789ABCDEF";
-	str[0] = hexDigits[(value >> 12) & 0x0F];
-	str[1] = hexDigits[(value >> 8) & 0x0F];
-	str[2] = hexDigits[(value >> 4) & 0x0F];
-	str[3] = hexDigits[value & 0x0F];
-	str[4] = '\0'; // Null-terminate the string
+// Function to convert hexa number to hexa string
+std::string DATAMCU::hexToString(uint32_t value)
+{
+    std::stringstream ss;
+    ss << std::hex << std::uppercase << value;
+    return ss.str();
 }
 
-void DATAMCU::messageToString(char *str) {
-	//01
-    uint8toHexString((uint8_t)mess.type,&str[0]);
-    //2345
-    uint16toHexString(mess.data, &str[2]);
-    //67
-    uint8toHexString((uint8_t)mess.checksum, &str[6]);
-    str[8] = '\0';
+// Function to convert one byte to a hexadecimal string
+std::string DATAMCU::byteToHexStr(uint8_t byte)
+{
+    const char hexChars[] = "0123456789ABCDEF";
+    std::string hex(2, '0');
+    hex[0] = hexChars[(byte >> 4) & 0x0F];
+    hex[1] = hexChars[byte & 0x0F];
+    return hex;
+}
+
+// Function to convert Message to string
+void DATAMCU::messageToString(const Message &packet, std::string &hexString)
+{
+    hexString.clear(); // Clear the string before starting
+
+    // Convert and append the 'type' char
+    hexString += byteToHexStr(static_cast<uint8_t>(packet.type));
+
+    // Convert and append the 'data' uint16_t (2 bytes)
+    hexString += byteToHexStr(static_cast<uint8_t>(packet.data >> 8));   // High byte
+    hexString += byteToHexStr(static_cast<uint8_t>(packet.data & 0xFF)); // Low byte
+
+    // Convert and append the 'checksum' uint8_t
+    hexString += byteToHexStr(packet.checksum);
 }

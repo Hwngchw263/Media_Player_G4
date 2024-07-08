@@ -33,6 +33,19 @@ int View::gettotalpage(std::vector<MediaFile>& files){
 } 
 void View::displayMetadata(std::vector<MediaFile>& files) {
     clearScreen();
+    //Tab
+    printLine('=',200);
+    std::cout << std::left
+    << std::setw(1) << "|"
+    << std::setw(33) << "Back[b]" 
+    << std::setw(33) << "Home[f]"
+    << std::setw(33) << "Music library[R]"
+    << std::setw(33) << "Video library[d]"
+    << std::setw(33) << "Playlists[y]" 
+    << std::setw(33) << "Quit[q]" 
+    << std::setw(1) << "|"
+    << std::endl;
+    printLine('-',200);
     if(files.size() != 0){
     totalPage = 1 + (files.size() - 1)/ITEMS_PER_PAGE;
     int start = currentPage * ITEMS_PER_PAGE;
@@ -149,6 +162,35 @@ void View::displayMetadata(std::vector<MediaFile>& files) {
         << std::endl;
         printLine('-',200);
     }
+    //Menu
+    std::cout << std::left
+    << std::setw(1) << "|"
+    << std::setw(33) << "Remove [t]"
+    << std::setw(33) << "Add to playlist[a]"
+    << std::setw(33) << "Edit [e]" 
+    << std::setw(33) << "Previous page[p]"
+    << std::setw(33) << "Goto page[g]"
+    << std::setw(33) << "Next page[n]"
+    << std::right
+    << std::setw(1) << "|"
+    << std::endl;
+    printLine('-',200);
+    //Playback
+    std::cout << std::left
+    << std::setw(5) << "|"
+    << std::setw(21) << "Previous[6]"
+    << std::setw(21) << "Play[1]" 
+    << std::setw(21) << "Pause[2]"
+    << std::setw(21) << "Resume[3]"  
+    << std::setw(21) << "Stop[4]"
+    << std::setw(21) << "Next[5]"
+    << std::setw(21) << "Repeat one[m]"
+    << std::setw(21) << "Repeat all[l]"
+    << std::setw(21) << "Volume[+][-]"
+    << std::right 
+    << std::setw(6) << "|"
+    << std::endl;
+    printLine('=',200);
 }
 void View::displayPage(std::vector<std::string>& files) {
     //Clear screen

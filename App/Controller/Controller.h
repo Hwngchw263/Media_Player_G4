@@ -10,18 +10,21 @@
 #include <condition_variable>
 #include <queue>
 
-class Controller {
+#define TOTAL_MODE 16
+class Controller
+{
 public:
     Controller();
     ~Controller();
-    void handleInput(const char& input);
-    void handleSetDirectory(const std::string& directory);
+    void handleInput(const char &input);
+    void handleSetDirectory(const std::string &directory);
     static void MusicFinishedCallbackWrapper();
-     
+
     void run();
+
 private:
-    std::vector<MediaFile>& parseTabtofiles();
-    std::vector<std::string>& parseTabtofilepaths();
+    std::vector<MediaFile> &parseTabtofiles();
+    std::vector<std::string> &parseTabtofilepaths();
     void handlePlay();
     void handlePause();
     void handleResume();
@@ -41,7 +44,7 @@ private:
     Player player;
     DATAMCU mcu_data;
     std::stack<Tab> tabHistory;
-    static Player* playerptr;
+    static Player *playerptr;
     std::string cur_dir;
     void getInputFromSerial();
     void getInputFromCin();
@@ -50,15 +53,25 @@ private:
     std::atomic<bool> serial_command_received;
     std::mutex flag_mutex;
     char serial_command;
+
     std::mutex mode_mutex;
+    std::mutex numsong_mutex;
     std::mutex datafield_mutex;
-    std::atomic<bool> is_playing;
-    char ParseData(std::string& message);
+    std::mutex cout_mutex;
+    std::mutex playing_mutex;
+
+    std::atomic<bool> is_playing = false;
+    char ParseData(std::string &message);
     std::queue<std::string> taskQueue;
     std::mutex queueMutex;
     std::condition_variable condition;
     bool running = true;
     char mode = '1';
+    uint16_t numsong = 1;
+    std::condition_variable cv;
+    bool exitFlag = false;
+    bool isModePrinted = false;
+    std::mutex printMutex;
 };
 
 #endif // CONTROLLER_H
