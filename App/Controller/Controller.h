@@ -49,6 +49,11 @@ private:
     void getInputFromSerial();
     void getInputFromCin();
     void executeTask();
+    void processMessage(const std::string& message);
+    void handleModeAndSongSelection();
+    void handleTask(const std::string& task);
+    std::string getTaskFromQueue();
+    
     SerialPort sp;
     std::atomic<bool> serial_command_received;
     std::mutex flag_mutex;
@@ -59,6 +64,7 @@ private:
     std::mutex datafield_mutex;
     std::mutex cout_mutex;
     std::mutex playing_mutex;
+    std::mutex condition_mutex;
 
     std::atomic<bool> is_playing = false;
     char ParseData(std::string &message);

@@ -41,9 +41,9 @@ char DATAMCU::ParseMessage(std::string &receiver_data)
         // create type
         std::string first = receiver_data.substr(0, 2);
         // change type to hex ( uint_8)
-        char type = (char)std::stoi(first);
+        char type = (char)std::stoi(first, nullptr, 16);
         std::string second = receiver_data.substr(2, 4);
-        uint16_t data = (uint16_t)stoi(second);
+        uint16_t data = (uint16_t)std::stoi(second, nullptr, 16);
         // save message data structure
         createMessage(type, data);
     }
