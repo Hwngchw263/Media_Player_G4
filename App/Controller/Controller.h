@@ -4,22 +4,27 @@
 #include "Model.h"
 #include "View.h"
 #include "Player.h"
+#include "Message.h"
 #include <stack>
 #include <string>
+#include <condition_variable>
+#include <queue>
 
-
-class Controller {
+#define TOTAL_MODE 16
+class Controller
+{
 public:
     Controller();
     ~Controller();
-    void handleInput(const char& input);
-    void handleSetDirectory(const std::string& directory);
+    void handleInput(const char &input);
+    void handleSetDirectory(const std::string &directory);
     static void MusicFinishedCallbackWrapper();
-     
     void run();
+    //void controlThreads(bool state);
+    void continuousPlaybackTimeDisplay(Player& player, std::atomic<bool>& displayFlag);
 private:
-    std::vector<MediaFile>& parseTabtofiles();
-    std::vector<std::string>& parseTabtofilepaths();
+    std::vector<MediaFile> &parseTabtofiles();
+    std::vector<std::string> &parseTabtofilepaths();
     void handlePlay();
     void handlePause();
     void handleResume();
@@ -37,19 +42,50 @@ private:
     Model model;
     View view;
     Player player;
+    DATAMCU mcu_data;
     std::stack<Tab> tabHistory;
-    static Player* playerptr;
+    static Player *playerptr;
     std::string cur_dir;
+    void getInputFromSerial();
+    void getInputFromCin();
+    void executeTask();
+    void processMessage(const std::string& message);
+    void handleModeAndSongSelection();
+    void handleTask(const std::string& task);
+    std::string getTaskFromQueue();
     
     SerialPort sp;
     std::atomic<bool> serial_command_received;
+    std::mutex flag_mutex;
     char serial_command;
-    std::mutex command_mutex;
-    std::atomic<bool> is_playing;
-    std::atomic<bool> Cin_thread ;
-    std::atomic<bool> MCU_thread;
-    char ParseData(std::string& message);
+
+    std::mutex mode_mutex;
+    std::mutex numsong_mutex;
+    std::mutex datafield_mutex;
+    std::mutex cout_mutex;
+    std::mutex playing_mutex;
+    std::mutex condition_mutex;
+
+    std::atomic<bool> is_playing = false;
+    char ParseData(std::string &message);
+    std::queue<std::string> taskQueue;
+    std::mutex queueMutex;
+    std::condition_variable condition;
+    bool running = true;
+    char mode = '1';
+    uint16_t numsong = 1;
+    std::condition_variable cv;
+    bool exitFlag = false;
+    bool isModePrinted = false;
+    std::mutex printMutex;
    
+    // std::mutex controlMutex;
+    // std::condition_variable controlCondition;
+    // bool running_thread = true;
+    std::thread displayThread;
+    std::atomic<bool> displayFlag;
+    void startDisplayThread();
+    void stopDisplayThread();
 };
 
 #endif // CONTROLLER_H
