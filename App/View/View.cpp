@@ -31,7 +31,8 @@ int View::gettotalpage(std::vector<MediaFile>& files){
     this->totalPage = 1 + (files.size() - 1)/ITEMS_PER_PAGE;
     return totalPage;
 } 
-void View::displayMetadata(std::vector<MediaFile>& files,uint32_t  duration) {
+
+void View::displayMetadata(std::vector<MediaFile>& files,uint32_t  duration, int cur_song) {
     clearScreen();
     //Tab
     printLine('=',200);
@@ -192,6 +193,12 @@ void View::displayMetadata(std::vector<MediaFile>& files,uint32_t  duration) {
     << std::endl;
     printLine('=',200);
     std::cout<< convertSecondsToTimeString(duration)<< std::endl;
+    std::cout << files[cur_song].getTitle() << std::endl;
+    int numchar = 198*duration/(files[cur_song].getDuration());
+    std::cout << "<";
+    std::string line(numchar, '#');
+    std::cout << line ;
+    std::cout << std::right << std::setw(200) <<">" << std::endl;
 
 }
 void View::displayPage(std::vector<std::string>& files) {
