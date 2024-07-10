@@ -50,7 +50,7 @@ void Controller::getInputFromSerial()
 {
     while (running)
     {
-        view.displayMetadata(parseTabtofiles(),player.getduration());
+        view.displayMetadata(parseTabtofiles(),player.getduration(), player.getcurrenttrack());
         std::string message = sp.receiveData();
         if (!message.empty())
         {
@@ -79,18 +79,20 @@ void Controller::getInputFromCin()
 {
     while (running)
     {
-        view.displayMetadata(parseTabtofiles(),player.getduration());
-        std::string cmd;
+        view.displayMetadata(parseTabtofiles(),player.getduration(),player.getcurrenttrack());
+        char cmd;
         if (!is_playing)
         {
             std::cout << "Enter command: ";
         }
-        std::getline(std::cin, cmd);
-        if (!cmd.empty())
+        std::cin>>cmd;
+
+        std::string str(1,cmd);
+        if (!str.empty())
         {
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
-                taskQueue.push(cmd);
+                taskQueue.push(str);
             }
             condition.notify_one();
         }
