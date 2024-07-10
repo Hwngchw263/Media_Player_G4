@@ -21,6 +21,10 @@
 #include <mutex>
 #include <ctime>
 #include "Mediafile.h"
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
+#include <libswresample/swresample.h>
+
 namespace fs = std::filesystem;
 
 
@@ -48,18 +52,30 @@ public:
     void setSonglist(std::vector<std::string>& songlist);
     void setMediafile(std::vector<MediaFile>& file);
     void setTrack(int track);
+    void CalculateCurrentTime();
+    void StartTimeThread();
+    void StopTimeThread();
+    int getcurrenttrack();
+    std::atomic<bool> quitTimeThread;
+    uint32_t getduration() ;
 private: 
     void RepeatOneSong();
     void RepaetAllSong();
-    std::thread playThread;
+    void audioThread(const std::string& filePath);
+    std::thread playerThread;
     std::atomic<bool> isPlaying;
     std::atomic<bool> isPaused;
     int volume;
     bool stopflag = false;
     MusicData music_Data;
     std::vector<MediaFile> mediafile;
-    const int Volume_Step = 10;
+    const int Volume_Step = 1;
     bool repeatSingleSong = false;
+    uint32_t duration =0;
+    std::condition_variable cv;
+    std::mutex cv_m;
+    std::thread timeThread;
+  
 };
 
 #endif // PLAYER_H
