@@ -187,5 +187,3 @@ void Player::FunctionCallback() {
         }
     }
 }
-
-
