@@ -4,6 +4,7 @@
 
 Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2) {
     //SDL_Init(SDL_INIT_AUDIO);
+    Mix_VolumeMusic(this->volume);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
     {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;

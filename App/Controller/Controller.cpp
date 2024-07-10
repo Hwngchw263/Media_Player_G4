@@ -6,6 +6,7 @@
 Player *Controller::playerptr = nullptr;
 Controller::Controller() : sp(SerialPort::getOpenSDADevicePath().c_str()), serial_command_received(false)
 {
+    Mix_VolumeMusic(1);
     // Configure for serial port
     if (!sp.configure())
     {
@@ -34,134 +35,169 @@ void Controller::run()
     sp.sendData(reset_message);
 
     // Start
-    // std::thread task_thread(&Controller::executeTask, this);
+    std::thread task_thread(&Controller::executeTask, this);
     std::thread serial_input_thread(&Controller::getInputFromSerial, this);
-    // std::thread cin_input_thread(&Controller::getInputFromCin, this);
+    std::thread cin_input_thread(&Controller::getInputFromCin, this);
 
     serial_input_thread.join();
-    // cin_input_thread.join();
-    // task_thread.join();
+    cin_input_thread.join();
+    task_thread.join();
     //  running = false;
-    //  condition.notify_one();
+    condition.notify_one();
 }
 
 void Controller::getInputFromSerial()
 {
-    // Get mode, num and push "S" to queue
     while (running)
     {
-        // Get message
+        view.displayMetadata(parseTabtofiles());
         std::string message = sp.receiveData();
         if (!message.empty())
         {
-            std::cout << message << std::endl;
-            // Lock guard for queueMutex
-            std::lock_guard<std::mutex> lock(queueMutex);
-            mcu_data.ParseMessage(message);
-            // Verify message
-            if (mcu_data.VerifyMessage(mcu_data.getmess()))
+            // std::cout << "Received from Serial: " << message << std::endl;
+            bool messageValid = false;
             {
-                std::cout << "Message true." << std::endl;
-                if (mcu_data.getmess().type == 'A')
-                {
-                    {
-                        std::unique_lock<std::mutex> lock(mode_mutex);
-                        // Get mode
-                        // Input: data field, TOTAL_MODE
-                        mode = mcu_data.PareMode(mcu_data.getmess().data, TOTAL_MODE);
-                    }
-                    {
-                        std::unique_lock<std::mutex> lock(numsong_mutex);
-                        // Get song
-                        // Input: data field, size of list file
-                        numsong = (mcu_data.getmess().data) % sizeof(parseTabtofiles());
-                        std::cout << "Mode: " << mode << std::endl;
-                        std::cout << "Song: " << numsong << std::endl;
-                    }
-                }
-                // Select
-                else if (mcu_data.getmess().type == 'S')
-                {
-                    std::cout << "Select" << std::endl;
-                    // convert type to string
-                    taskQueue.push(std::string(1, 'S'));
-                    condition.notify_one();
-                }
-                // Case volume
-                else if (mcu_data.getmess().type == 'V')
-                {
-                    int volume_value = mcu_data.getmess().data;
-                    // Mix_Volume;
-                }
+                std::lock_guard<std::mutex> lock(queueMutex);
+                mcu_data.ParseMessage(message);
+                messageValid = mcu_data.VerifyMessage(mcu_data.getmess());
+            }
+            if (messageValid)
+            {
+                processMessage(message);
             }
             else
             {
-                std::cout << "Message fall. Send again" << std::endl;
-                // Request MCU send again
-                // std::string resent_request;
-                // // create message
-                // mcu_data.createMessage('W', 0);
-                // // convert message to string
-                // mcu_data.messageToString(mcu_data.getmess(), resent_request);
-                // // Send string to MCU
-                // sp.sendData(resent_request);
+                std::cout << "Message failed. Send again" << std::endl;
+                // Handle message resend request here
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
 void Controller::getInputFromCin()
 {
-    // Get cmd, push to queue
     while (running)
     {
+        view.displayMetadata(parseTabtofiles());
         std::string cmd;
-        std::cout << "Enter command: ";
+        if (!is_playing)
+        {
+            std::cout << "Enter command: ";
+        }
         std::getline(std::cin, cmd);
         if (!cmd.empty())
         {
-            std::lock_guard<std::mutex> lock(queueMutex);
-            taskQueue.push(cmd);
+            {
+                std::lock_guard<std::mutex> lock(queueMutex);
+                taskQueue.push(cmd);
+            }
             condition.notify_one();
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
+}
+
+void Controller::processMessage(const std::string &message)
+{
+    if (mcu_data.VerifyMessage(mcu_data.getmess()))
+    {
+        // std::cout << "Message true.\n" << std::endl;
+        // std::cout << "Type: " << mcu_data.getmess().type << std::endl;
+        // std::cout << "Data: " << mcu_data.getmess().data << std::endl;
+        // std::cout << "Checksum: " << mcu_data.getmess().checksum << std::endl;
+
+        if (mcu_data.getmess().type == 'A')
+        {
+            handleModeAndSongSelection();
+        }
+        else if (mcu_data.getmess().type == 'S')
+        {
+            // std::cout << "Select" << std::endl;
+            {
+                std::lock_guard<std::mutex> lock(queueMutex);
+                taskQueue.push("S");
+                // std::cout << taskQueue.front() << std::endl;
+            }
+            condition.notify_one();
+        }
+        else if (mcu_data.getmess().type == 'V')
+        {
+            int volume_value = mcu_data.getmess().data;
+            Mix_VolumeMusic(volume_value);
+        }
+    }
+    else
+    {
+        std::cout << "Message failed. Send again" << std::endl;
+    }
+}
+
+void Controller::handleModeAndSongSelection()
+{
+
+    // std::cout << "lock mode" << std::endl;
+    mode = mcu_data.PareMode(mcu_data.getmess().data, TOTAL_MODE);
+    {
+        std::unique_lock<std::mutex> lock(numsong_mutex);
+        // std::cout << "lock Numsongmode" << std::endl;
+        numsong = mcu_data.getmess().data % sizeof(parseTabtofiles());
+        // std::cout << "\033[A\033[2K";
+        if (is_playing)
+        {
+            std::cout << "Song: " << numsong << std::endl;
+        }
+        else
+        {
+            std::cout << "Enter command: ";
+            std::cout << "Mode: " << mode << std::endl;
+        }
+    }
+}
+
+std::string Controller::getTaskFromQueue()
+{
+    std::lock_guard<std::mutex> lock(queueMutex);
+    if (!taskQueue.empty())
+    {
+        std::string task = taskQueue.front();
+        taskQueue.pop();
+        return task;
+    }
+    return "";
 }
 
 void Controller::executeTask()
 {
-    // Take task, pop out queue
     while (running)
     {
-        std::string task;
-        // Lock guard for queue
-        std::unique_lock<std::mutex> lock(queueMutex);
+        std::unique_lock<std::mutex> lock(condition_mutex);
         condition.wait(lock, [&]
                        { return !taskQueue.empty(); });
-        task = taskQueue.front();
-        taskQueue.pop();
-        // If task == "S" enter mode (run with input from MCU)
-        if (task == "S")
+        std::string task = getTaskFromQueue();
+        // std::cout << "Task: " << task << std::endl;
+        if (!task.empty())
         {
-            // Run mode
-            // Lock the mutex for read mode
-            std::lock_guard<std::mutex> lock(mode_mutex);
-            // handleInput(mode);
+            handleTask(task);
         }
-        // Run with input from Cin
-        else
-        {
-            // Lock the mutex for read mode
-            {
-                std::lock_guard<std::mutex> lock(mode_mutex);
-                // Set current mode
-                mode = task[0];
-            }
-            // handleInput(task[0]);
-        }
+    }
+}
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+void Controller::handleTask(const std::string &task)
+{
+    // std::cout << "Handling task: " << task << std::endl;
+    if (task == "S")
+    {
+        std::lock_guard<std::mutex> lock(mode_mutex);
+        handleInput(mode);
+    }
+    else
+    {
+        {
+            std::lock_guard<std::mutex> lock(mode_mutex);
+            mode = task[0];
+        }
+        handleInput(task[0]);
     }
 }
 
@@ -287,10 +323,12 @@ void Controller::handleSetDirectory(const std::string &directory)
 
 void Controller::handlePlay()
 {
+    is_playing = true;
     // TO DO:Reset num in MCU num = 0
-    std::cout << "Enter song to play: ";
+    std::cout << "Enter song to play:  \n";
     int num;
     std::string task;
+    // taskQueue.push("S");
     // Get data from queue
     {
         std::unique_lock<std::mutex> lock(queueMutex);
@@ -322,34 +360,78 @@ void Controller::handlePlay()
         // Play song
         player.play(parseTabtofilepaths()[num - 1]);
         /*Send message to blink GREEN led and turn off led RED*/
+        std::string blinkgreen_message;
+        // create message
+        mcu_data.createMessage('O', 1);
+        // convert message to string
+        mcu_data.messageToString(mcu_data.getmess(), blinkgreen_message);
+        // Send string to MCU
+        sp.sendData(blinkgreen_message);
+        // TO DO:: reset num in MCU to old mode
     }
-    // TO DO:: reset num in MCU to old mode
+    is_playing = false;
+    // view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handlePause()
 {
     player.pause();
     /*Send message to turn off GREEN led blink led RED*/
+    std::string blinkred_message;
+    // create message
+    mcu_data.createMessage('O', 0);
+    // convert message to string
+    mcu_data.messageToString(mcu_data.getmess(), blinkred_message);
+    // Send string to MCU
+    sp.sendData(blinkred_message);
 }
 
 void Controller::handleResume()
 {
     player.resume();
     /*Send message to blink GREEN led and turn off led RED*/
+    std::string blinkgreen_message;
+    // create message
+    mcu_data.createMessage('O', 1);
+    // convert message to string
+    mcu_data.messageToString(mcu_data.getmess(), blinkgreen_message);
+    // Send string to MCU
+    sp.sendData(blinkgreen_message);
 }
 
 void Controller::handleStop()
 {
     player.stop();
     /*Send message to turn off GREEN led blink led RED*/
+    std::string blinkred_message;
+    // create message
+    mcu_data.createMessage('O', 0);
+    // convert message to string
+    mcu_data.messageToString(mcu_data.getmess(), blinkred_message);
+    // Send string to MCU
+    sp.sendData(blinkred_message);
 }
 void Controller::handleNext()
 {
     player.next();
+    std::string blinkred_message;
+    // create message
+    mcu_data.createMessage('O', 1);
+    // convert message to string
+    mcu_data.messageToString(mcu_data.getmess(), blinkred_message);
+    // Send string to MCU
+    sp.sendData(blinkred_message);
 }
 void Controller::handlePrevious()
 {
     player.previous();
+    std::string blinkred_message;
+    // create message
+    mcu_data.createMessage('O', 1);
+    // convert message to string
+    mcu_data.messageToString(mcu_data.getmess(), blinkred_message);
+    // Send string to MCU
+    sp.sendData(blinkred_message);
 }
 void Controller::handleVolume(char volume)
 {
