@@ -42,7 +42,9 @@ void Player::RepeatOneSong() {
     std::cout << "Mode play all track: ON" << std::endl;
     repeatSingleSong = false;
 }
-
+int Player::getcurrenttrack(){
+    return music_Data.currentTrack;
+}
 void Player::RepaetAllSong() {
     std::cout << "Mode play single track: ON" << std::endl;
     repeatSingleSong = true;
@@ -56,7 +58,7 @@ void Player::play(const std::string &filepath) {
    if (isPlaying) {
         stop();
     }
-    std::cout << mediafile[music_Data.currentTrack].getTitle() << std::endl;
+    //std::cout << mediafile[music_Data.currentTrack].getTitle() << std::endl;
     // playThread = std::thread([this, file]() {
     //     // Implementation to play the media file using SDL2
     //     std::cout << "Playing: " << file << std::endl;
