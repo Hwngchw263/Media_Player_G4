@@ -2,8 +2,27 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 
-Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2) {
-    SDL_Init(SDL_INIT_AUDIO);
+Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2),quitTimeThread(false){
+    //SDL_Init(SDL_INIT_AUDIO);
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
+    {
+        std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+        // Handle SDL initialization error
+    }
+    // Initialize SDL_Mixer and check for errors
+    int mix_flags = MIX_INIT_FLAC | MIX_INIT_MOD | MIX_INIT_MP3 | MIX_INIT_OGG;
+    int initialized_flags = Mix_Init(mix_flags);
+    if ((initialized_flags & mix_flags) != mix_flags)
+        {
+            std::cerr << "Mix_Init Error: " << Mix_GetError() << std::endl;
+            // Handle SDL_Mixer initialization error
+        }
+    // Initialize SDL_Mixer audio settings
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1)
+        {
+            std::cerr << "Mix_OpenAudio Error: " << Mix_GetError() << std::endl;
+            // Handle SDL_Mixer audio initialization error
+        }
 }
 
 Player::~Player() {
@@ -71,6 +90,7 @@ void Player::play(const std::string &filepath) {
     stopflag = false;
     // Set start time
     music_Data.startTime = SDL_GetTicks();
+    StartTimeThread();
 }
 
 void Player::pause() {
@@ -106,6 +126,7 @@ void Player::stop() {
     if (Mix_PlayingMusic()) {
         stopflag = true;
         Mix_HaltMusic();
+        StopTimeThread();
     }
 }
 void Player::next(){
@@ -167,5 +188,31 @@ void Player::FunctionCallback() {
         }
     }
 }
+void Player ::CalculateCurrentTime() {
+    while (!quitTimeThread) {
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait_for(lk, std::chrono::seconds(1));
 
+        if (quitTimeThread) break;
+        if (music_Data.music != nullptr && Mix_PlayingMusic() && !isPaused) {
+            Uint32 currentTimeMs = SDL_GetTicks() - music_Data.startTime;
+            duration = currentTimeMs / 1000;
 
+        }
+    }
+}
+void Player::StartTimeThread(){
+    
+    StopTimeThread();
+    quitTimeThread = false;
+    timeThread = std::thread(&Player::CalculateCurrentTime,this);
+}
+void Player::StopTimeThread(){
+    quitTimeThread = true;
+    if (timeThread.joinable()) {
+        timeThread.join();
+    }
+}
+uint32_t Player::getduration() {
+    return this->duration;
+}
