@@ -23,10 +23,12 @@ void DATAMCU::createMessage(char type, uint16_t data)
 }
 
 // Function to verify message
-bool DATAMCU::VerifyMessage(Message &msg)
-{
-    uint8_t check = msg.checksum;
-    if (check == calculateChecksum(msg.data))
+bool DATAMCU::VerifyMessage(Message &msg,std::string& message)
+{   
+    
+    std::string third = message.substr(6, 2);
+    uint8_t checksumstr = (uint8_t)std::stoi(third, nullptr, 16);
+    if (checksumstr == calculateChecksum(msg.data))
     {
         return true;
     }

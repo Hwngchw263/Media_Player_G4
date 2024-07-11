@@ -14,7 +14,6 @@ Controller::Controller() : sp(SerialPort::getOpenSDADevicePath().c_str()), seria
         std::exit(1); // Exit if configuration fails
     }
 }
-/// vcllll
 
 Controller::~Controller()
 {
@@ -51,7 +50,7 @@ void Controller::getInputFromSerial()
 {
     while (running)
     {
-        view.displayMetadata(parseTabtofiles());
+        view.displayMetadata(parseTabtofiles(),player.getduration(), player.getcurrenttrack());
         std::string message = sp.receiveData();
         if (!message.empty())
         {
@@ -60,7 +59,7 @@ void Controller::getInputFromSerial()
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
                 mcu_data.ParseMessage(message);
-                messageValid = mcu_data.VerifyMessage(mcu_data.getmess());
+                messageValid = mcu_data.VerifyMessage(mcu_data.getmess(), message);
             }
             if (messageValid)
             {
@@ -80,18 +79,20 @@ void Controller::getInputFromCin()
 {
     while (running)
     {
-        view.displayMetadata(parseTabtofiles());
-        std::string cmd;
+        view.displayMetadata(parseTabtofiles(),player.getduration(),player.getcurrenttrack());
+        char cmd;
         if (!is_playing)
         {
             std::cout << "Enter command: ";
         }
-        std::getline(std::cin, cmd);
-        if (!cmd.empty())
+        std::cin>>cmd;
+
+        std::string str(1,cmd);
+        if (!str.empty())
         {
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
-                taskQueue.push(cmd);
+                taskQueue.push(str);
             }
             condition.notify_one();
         }
@@ -101,7 +102,8 @@ void Controller::getInputFromCin()
 
 void Controller::processMessage(const std::string &message)
 {
-    if (mcu_data.VerifyMessage(mcu_data.getmess()))
+    std::string tempstr = message;
+    if (mcu_data.VerifyMessage(mcu_data.getmess(), tempstr))
     {
         // std::cout << "Message true.\n" << std::endl;
         // std::cout << "Type: " << mcu_data.getmess().type << std::endl;
@@ -268,7 +270,7 @@ void Controller::handleInput(const char &input)
     default:
         std::cout << "Unknown command." << std::endl;
         // view.displayHelp();
-        view.displayMetadata(parseTabtofiles());
+        //view.displayMetadata(parseTabtofiles());
         break;
     }
 }
@@ -314,7 +316,7 @@ void Controller::handleSetDirectory(const std::string &directory)
         view.settab(MUSIC);
         tabHistory.push(MUSIC);
         view.setpage(0);
-        view.displayMetadata(parseTabtofiles());
+        //view.displayMetadata(parseTabtofiles());
     }
     else
     {
@@ -466,7 +468,7 @@ void Controller::handleSwitchTab(const Tab tab)
         }
         view.setpage(0);
     }
-    view.displayMetadata(parseTabtofiles());
+    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handleEditMetadata()
@@ -556,7 +558,7 @@ void Controller::handleEditMetadata()
         // get path after change
         model.setDirectory(cur_dir);
     }
-    view.displayMetadata(parseTabtofiles());
+    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handleNextPage()
@@ -567,7 +569,7 @@ void Controller::handleNextPage()
     {
         view.setpage(page);
     }
-    view.displayMetadata(parseTabtofiles());
+    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handlePrevPage()
@@ -578,7 +580,7 @@ void Controller::handlePrevPage()
         currentPage--;
         view.setpage(currentPage);
     }
-    view.displayMetadata(parseTabtofiles());
+    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handleRemoveFile()
@@ -588,7 +590,7 @@ void Controller::handleRemoveFile()
     std::cin >> num;
     // Check valid of num
     model.removeFile(parseTabtofilepaths(), num);
-    view.displayMetadata(parseTabtofiles());
+    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handleBack()
@@ -598,5 +600,5 @@ void Controller::handleBack()
         tabHistory.pop();
         view.settab(tabHistory.top());
     }
-    view.displayMetadata(parseTabtofiles());
+    //view.displayMetadata(parseTabtofiles());
 }

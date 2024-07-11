@@ -2,9 +2,8 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 
-Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2) {
+Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2),quitTimeThread(false){
     //SDL_Init(SDL_INIT_AUDIO);
-    Mix_VolumeMusic(this->volume);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
     {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
@@ -43,7 +42,9 @@ void Player::RepeatOneSong() {
     std::cout << "Mode play all track: ON" << std::endl;
     repeatSingleSong = false;
 }
-
+int Player::getcurrenttrack(){
+    return music_Data.currentTrack;
+}
 void Player::RepaetAllSong() {
     std::cout << "Mode play single track: ON" << std::endl;
     repeatSingleSong = true;
@@ -57,7 +58,7 @@ void Player::play(const std::string &filepath) {
    if (isPlaying) {
         stop();
     }
-    std::cout << mediafile[music_Data.currentTrack].getTitle() << std::endl;
+    //std::cout << mediafile[music_Data.currentTrack].getTitle() << std::endl;
     // playThread = std::thread([this, file]() {
     //     // Implementation to play the media file using SDL2
     //     std::cout << "Playing: " << file << std::endl;
@@ -91,6 +92,7 @@ void Player::play(const std::string &filepath) {
     stopflag = false;
     // Set start time
     music_Data.startTime = SDL_GetTicks();
+    StartTimeThread();
 }
 
 void Player::pause() {
@@ -126,6 +128,7 @@ void Player::stop() {
     if (Mix_PlayingMusic()) {
         stopflag = true;
         Mix_HaltMusic();
+        StopTimeThread();
     }
 }
 void Player::next(){
@@ -186,4 +189,32 @@ void Player::FunctionCallback() {
             next();
         }
     }
+}
+void Player ::CalculateCurrentTime() {
+    while (!quitTimeThread) {
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait_for(lk, std::chrono::seconds(1));
+
+        if (quitTimeThread) break;
+        if (music_Data.music != nullptr && Mix_PlayingMusic() && !isPaused) {
+            Uint32 currentTimeMs = SDL_GetTicks() - music_Data.startTime;
+            duration = currentTimeMs / 1000;
+
+        }
+    }
+}
+void Player::StartTimeThread(){
+    
+    StopTimeThread();
+    quitTimeThread = false;
+    timeThread = std::thread(&Player::CalculateCurrentTime,this);
+}
+void Player::StopTimeThread(){
+    quitTimeThread = true;
+    if (timeThread.joinable()) {
+        timeThread.join();
+    }
+}
+uint32_t Player::getduration() {
+    return this->duration;
 }
