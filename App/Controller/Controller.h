@@ -9,7 +9,7 @@
 #include <string>
 #include <condition_variable>
 #include <queue>
-#incude "USB.h"
+#include "USB.h"
 
 #define TOTAL_MODE 16
 #define USB_TOTAL_MODE 3

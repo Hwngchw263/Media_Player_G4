@@ -79,7 +79,7 @@ void Controller::getInputFromSerial()
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
                 mcu_data.ParseMessage(message);
-                messageValid = mcu_data.VerifyMessage(mcu_data.getmess());
+                messageValid = mcu_data.VerifyMessage(mcu_data.getmess(),message);
             }
             if (messageValid)
             {
@@ -121,8 +121,8 @@ void Controller::getInputFromCin()
 }
 
 void Controller::processMessage(const std::string &message)
-{
-    if (mcu_data.VerifyMessage(mcu_data.getmess()))
+{   std::string temp = message;
+    if (mcu_data.VerifyMessage(mcu_data.getmess(),temp))
     {
         // std::cout << "Message true.\n" << std::endl;
         // std::cout << "Type: " << mcu_data.getmess().type << std::endl;
