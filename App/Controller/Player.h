@@ -29,6 +29,7 @@ namespace fs = std::filesystem;
 
 
 struct MusicData {
+    //index bai hat
     int currentTrack = 0;
     Mix_Music* music = nullptr;
     std::vector<std::string> songlist;

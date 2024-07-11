@@ -1,32 +1,46 @@
 #include "UART.h"
 #include <iostream>
-#include <fcntl.h>    // Contains file controls like O_RDWR
-#include <errno.h>    // Error number definitions
-#include <termios.h>  // POSIX terminal control definitions
-#include <unistd.h>   // write(), read(), close()
-#include <cstring>    // strerror
+#include <fcntl.h>   // Contains file controls like O_RDWR
+#include <errno.h>   // Error number definitions
+#include <termios.h> // POSIX terminal control definitions
+#include <unistd.h>  // write(), read(), close()
+#include <cstring>   // strerror
 #include <regex>
 #include <filesystem>
-SerialPort::SerialPort(const char* port) {
-    port_name = std::string(port);
-    serial_port = open(port, O_RDWR | O_NONBLOCK);
 
-    if (serial_port < 0) {
+SerialPort::SerialPort(std::string port):serial_port(-1)
+{
+    port_name = port;
+    // serial_port = open(port, O_RDWR | O_NONBLOCK);
+
+    // if (serial_port < 0)
+    // {
+    //     std::cerr << "Error " << errno << " opening " << port_name << ": " << strerror(errno) << std::endl;
+    // }
+}
+
+SerialPort::~SerialPort()
+{
+    //close(serial_port);
+    if (serial_port >= 0)
+        {
+            close(serial_port);
+        }
+}
+bool SerialPort::configure()
+{
+    serial_port = open(port_name.c_str(), O_RDWR | O_NONBLOCK);
+
+    if (serial_port < 0)
+    {
         std::cerr << "Error " << errno << " opening " << port_name << ": " << strerror(errno) << std::endl;
+        return false;
     }
-}
-
-SerialPort::~SerialPort() {
-    close(serial_port);
-}
-// void SerialPort::sendfirstdata(const char* data){
-//     write(serial_port, data, strlen(data));
-// }
-bool SerialPort::configure() {
     struct termios tty;
-    if (tcgetattr(serial_port, &tty) != 0) {
+    if (tcgetattr(serial_port, &tty) != 0)
+    {
         std::cerr << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
-       
+
         return false;
     }
 
@@ -54,104 +68,53 @@ bool SerialPort::configure() {
     cfsetispeed(&tty, B9600);
     cfsetospeed(&tty, B9600);
 
-    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+    if (tcsetattr(serial_port, TCSANOW, &tty) != 0)
+    {
         std::cerr << "Error " << errno << " from tcsetattr: " << strerror(errno) << std::endl;
-        
+
         return false;
     }
 
     return true;
 }
-void SerialPort::sendData(const char* data) {
-    write(serial_port, data, strlen(data));
+
+// Function to write data to the serial port
+void SerialPort::sendData(const std::string &data)
+{
+    write(serial_port, data.c_str(), data.length());
 }
-std::string SerialPort::receiveData() {
-    //   char buffer[BUFFER_SIZE +1]; // thêm 1 để chứa ký tự null
-    //  int index = 0;
 
-    // // Đọc đúng 4 ký tự
-    // while (index < BUFFER_SIZE) {
-    //     int bytes_read = read(serial_port, &buffer[index], 1);
-    //     if (bytes_read < 0) {
-    //         std::cerr << "Error reading from serial port: " << strerror(errno) << std::endl;
-    //         break;
-    //     } else if (bytes_read > 0) {
-    //         index++;
-    //     }
-    // }
-    // buffer[index] = '\0'; // Kết thúc chuỗi bằng ký tự null
-    
-    // return std::string(buffer);
+// Function to read data from the serial port
+std::string SerialPort::receiveData()
+{
+    char read_buf[BUFFER_SIZE + 1];                           // Buffer to store received data
+    int num_bytes = read(serial_port, read_buf, BUFFER_SIZE); // Read data
 
-  char buffer[BUFFER_SIZE + 1]; // thêm 1 để chứa ký tự null
-    int index = 0;
-
-    fd_set readfds;
-    struct timeval timeout;
-
-    FD_ZERO(&readfds);
-    FD_SET(serial_port, &readfds);
-
-    timeout.tv_sec = 1; // 1 second timeout
-    timeout.tv_usec = 0;
-
-    int ret = select(serial_port + 1, &readfds, NULL, NULL, &timeout);
-
-    if (ret > 0 && FD_ISSET(serial_port, &readfds)) {
-        // Đọc đúng 4 ký tự
-        while (index < BUFFER_SIZE) {
-            int bytes_read = read(serial_port, &buffer[index], 1);
-            if (bytes_read < 0) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    // Không có dữ liệu sẵn sàng, dừng đọc
-                    break;
-                } else {
-                    std::cerr << "Error reading from serial port: " << strerror(errno) << std::endl;
-                    break;
-                }
-            } else if (bytes_read > 0) {
-                index++;
-            }
+    if (num_bytes < 0)
+    {
+        if (errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            std::cerr << "Error reading: " << strerror(errno) << std::endl;
         }
-    } else if (ret < 0) {
-        std::cerr << "Error " << errno << " from select: " << strerror(errno) << std::endl;
-    } else {
-        //std::cerr << "No data available to read." << std::endl;
+        return "";
     }
-
-    buffer[index] = '\0'; // Kết thúc chuỗi bằng ký tự null
-
-    return std::string(buffer);
-
-    //buffer[BUFFER_SIZE] = '\0'; // Null-terminate the string
-    //std::cout << "Received: " << buffer << std::endl;
-    
-    // char read_buf[256];
-    // memset(&read_buf, '\0', sizeof(read_buf));
-    // int num_bytes = read(serial_port, &read_buf, sizeof(read_buf));
-
-    // if (num_bytes < 0) {
-    //     if (errno != EAGAIN && errno != EWOULDBLOCK) {
-    //         std::cerr << "Error reading: " << strerror(errno) << std::endl;
-    //     }
-    //     return "";
-    // } else if (num_bytes > 0) {
-    //     return std::string(read_buf, num_bytes);
-    // }
-
-    // return "";
+    read_buf[num_bytes] = '\0'; // Null terminate the string
+    return std::string(read_buf);
 }
 
-std::string  SerialPort::getOpenSDADevicePath(){
+std::string SerialPort::getOpenSDADevicePath()
+{
     std::string openSDADevicePath;
     std::string path = "/dev/";
     std::regex devicePattern("ttyACM[0-9]+");
 
-    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+    for (const auto &entry : std::filesystem::directory_iterator(path))
+    {
         std::string deviceName = entry.path().filename().string();
-        if (std::regex_match(deviceName, devicePattern)) {
+        if (std::regex_match(deviceName, devicePattern))
+        {
             openSDADevicePath = entry.path().string();
-            break;  // Exit loop after finding the first matching device
+            break; // Exit loop after finding the first matching device
         }
     }
 

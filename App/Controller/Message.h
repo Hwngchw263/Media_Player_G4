@@ -8,47 +8,44 @@
 #include <iomanip>
 #include <math.h>
 #include <string>
-#define Hex_Error		16
-//Structure of message
-typedef struct {
-    char type;
-    //2byte
-    uint16_t data;
-    uint8_t checksum;
+#define Hex_Error 16
+// Structure of message
+typedef struct
+{
+    char type;        // 1 byte
+    uint16_t data;    // 2 bytes
+    uint8_t checksum; // 1 byte
 } Message;
 
-class DATAMCU{
-    private:
-        Message mess;
-        
-    public:
-        //constructor
-       DATAMCU();
-       ~DATAMCU();   
-        uint8_t calculateChecksum( uint16_t data);
-        //create kieu la message hay string
-        void createMessage(char type, uint16_t data);
-        //parse kieu la bool hay message , string
-        //giup luu vao mess
-        char ParseMessage(std::string& receiver_data);
-        //check bien mess
-        bool VerifyMessage(Message& msg);
-        std::string toString() const;
+class DATAMCU
+{
+private:
+    Message mess;
 
-        uint8_t Convert_Char_To_Hex(uint8_t ch_in);
-        uint32_t StrtoHex(std::string& ptr, uint8_t len);
-        //convert uint8_t to hex 
-        void uint8ToHexString(uint8_t value, char *str);
-        //convert uint16_t to hex
-        void uint16toHexString(uint16_t value , char *str);
-        //convert Message to string (nhu mcu)
-        void messageToString( char *str) ;
-
-        std::string messageToString();
-
-        //tao string gui xuong , return string, input msg
-        
+public:
+    // constructor
+    DATAMCU();
+    ~DATAMCU();
+    // Function to get message
+    Message &getmess();
+    // Function to calculate checksum
+    uint8_t calculateChecksum(uint16_t data);
+    /// Function to create message
+    void createMessage(char type, uint16_t data);
+    // Function to verify message
+    bool VerifyMessage(Message &msg,std::string& message);
+    // Function to parse message
+    void ParseMessage(std::string &receiver_data);
+    // Function parse data to take mode
+    char PareMode(uint16_t value, uint8_t total_mode);
+    // Function to convert hexa number to hexa string
+    std::string hexToString(uint32_t value);
+    // Function to convert one byte to hex string
+    std::string byteToHexStr(uint8_t byte);
+    // Function to convert Message to string
+    void messageToString(const Message &packet, std::string &hexString);
+    //convert 2 last char to hex
+    
 };
-
 
 #endif

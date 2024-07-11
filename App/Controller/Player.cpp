@@ -55,6 +55,7 @@ void Player::setSonglist(std::vector<std::string>& songlist){
 }
 
 void Player::play(const std::string &filepath) {
+    //call de stop bai cu 
    if (isPlaying) {
         stop();
     }
@@ -190,26 +191,33 @@ void Player::FunctionCallback() {
         }
     }
 }
+
 void Player ::CalculateCurrentTime() {
+    //
     while (!quitTimeThread) {
         std::unique_lock<std::mutex> lk(cv_m);
         cv.wait_for(lk, std::chrono::seconds(1));
 
         if (quitTimeThread) break;
+        //kiem tra co music
         if (music_Data.music != nullptr && Mix_PlayingMusic() && !isPaused) {
+            //dem thoi gian 
             Uint32 currentTimeMs = SDL_GetTicks() - music_Data.startTime;
             duration = currentTimeMs / 1000;
 
         }
     }
 }
+//muc tieu chay thread 
 void Player::StartTimeThread(){
     
     StopTimeThread();
     quitTimeThread = false;
     timeThread = std::thread(&Player::CalculateCurrentTime,this);
 }
+//dung thoi gian 
 void Player::StopTimeThread(){
+    //tat vong while 
     quitTimeThread = true;
     if (timeThread.joinable()) {
         timeThread.join();
