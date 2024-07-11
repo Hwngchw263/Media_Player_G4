@@ -81,12 +81,24 @@ bool SerialPort::configure()
 // Function to write data to the serial port
 void SerialPort::sendData(const std::string &data)
 {
-    write(serial_port, data.c_str(), data.length());
+   //write(serial_port, data.c_str(), data.length());
+    if (serial_port >= 0)
+    {
+        write(serial_port, data.c_str(), data.length());
+    }
+    else
+    {
+        std::cerr << "Serial port not open. Cannot send data." << std::endl;
+    }
 }
 
 // Function to read data from the serial port
 std::string SerialPort::receiveData()
-{
+{   if (serial_port < 0)
+    {
+        std::cerr << "Serial port not open. Cannot read data." << std::endl;
+        return "";
+    }
     char read_buf[BUFFER_SIZE + 1];                           // Buffer to store received data
     int num_bytes = read(serial_port, read_buf, BUFFER_SIZE); // Read data
 

@@ -4,17 +4,11 @@
 #include <algorithm>
 
 Player *Controller::playerptr = nullptr;
-Controller::Controller() :  serial_command_received(false),sp("")
-{   
-    //sp(SerialPort::getOpenSDADevicePath().c_str()),
+Controller::Controller() : sp(" "), serial_command_received(false),serial_port_initialized(false)
+{
     Mix_VolumeMusic(1);
     // Configure for serial port
-    // if (!sp.configure())
-    // {
-    //     std::cerr << "Failed to configure serial port" << std::endl;
-    //     std::exit(1); // Exit if configuration fails
-    // }
-    bool khoitao=false;
+      bool khoitao=false;
     if (!khoitao)
     {
         std::string port = SerialPort::getOpenSDADevicePath();
@@ -35,10 +29,14 @@ Controller::Controller() :  serial_command_received(false),sp("")
         // }
         //std::this_thread::sleep_for(std::chrono::seconds(5));
     }
+     //port_check_thread = std::thread(&Controller::checkAndInitializeSerialPort, this);
 }
+
+
 
 Controller::~Controller()
 {
+    
 }
 //------------------------------Hook for music------------------------------------
 void Controller::MusicFinishedCallbackWrapper()
@@ -72,7 +70,7 @@ void Controller::getInputFromSerial()
 {
     while (running)
     {
-        view.displayPage(parseTabtofiles(),player.getduration(), player.getcurrenttrack());
+        view.displayPage(executing_lisfile,player.getduration(), player.getcurrenttrack());
         std::string message = sp.receiveData();
         if (!message.empty())
         {
@@ -101,7 +99,7 @@ void Controller::getInputFromCin()
 {
     while (running)
     {
-        view.displayPage(parseTabtofiles(),player.getduration(),player.getcurrenttrack());
+        view.displayPage(executing_lisfile,player.getduration(),player.getcurrenttrack());
         char cmd;
         if (!is_playing)
         {
@@ -159,19 +157,18 @@ void Controller::processMessage(const std::string &message)
 
 void Controller::handleModeAndSongSelection()
 {
-
-    // std::cout << "lock mode" << std::endl;
-    mode = mcu_data.PareMode(num_mode, TOTAL_MODE);
     {
-        std::unique_lock<std::mutex> lock(numsong_mutex);
+        //std::unique_lock<std::mutex> lock(numsong_mutex);
         int total_song = sizeof(parseTabtofiles());
-        current_song = mcu_data.PareNumsong(num_song, total_song);
         if (is_playing)
         {
+            current_song = mcu_data.PareNumsong(num_song, total_song);
             std::cout << "Song: " << current_song << std::endl;
         }
         else
-        {
+        {   
+            // std::cout << "lock mode" << std::endl;
+            mode = mcu_data.PareMode(num_mode, TOTAL_MODE);
             std::cout << "Enter command: ";
             std::cout << "Mode: " << mode << std::endl;
         }
@@ -207,7 +204,8 @@ void Controller::executeTask()
 }
 
 void Controller::handleTask(const std::string &task)
-{
+{   
+
     // std::cout << "Handling task: " << task << std::endl;
     if (task == "S")
     {
@@ -281,7 +279,7 @@ void Controller::handleInput(const char &input)
     case '<':
         handlePrevPage();
         break;
-    case 'd':
+    case 'r':
         handleRemoveFile();
         break;
     case 'b':
@@ -333,9 +331,16 @@ void Controller::handleSetDirectory(const std::string &directory)
     cur_dir = directory;
     if (model.setDirectory(directory))
     {
+        //Set tab to display
         view.settab(MUSIC);
+        //Set filelist to display
+        view.setdisplayfilelist(parseTabtofiles());
+        //Set filelist executing
+        executing_lisfile = parseTabtofiles();
+        //Push current tab to stack
         tabHistory.push(MUSIC);
-        view.setpage(0);
+        //Set page is 0
+        view.setpage(1);
         //view.displayMetadata(parseTabtofiles());
     }
     else
@@ -346,8 +351,12 @@ void Controller::handleSetDirectory(const std::string &directory)
 
 void Controller::handlePlay()
 {
+    //Get current playing listfile
+    executing_lisfile = parseTabtofiles();
+    //Get current playing list filepath
+    executing_listfilepath = parseTabtofilepaths();
+    //Set flag playing
     is_playing = true;
-    // TO DO:Reset num in MCU num = 0
     std::cout << "Enter song to play:  \n";
     int num;
     std::string task;
@@ -376,11 +385,12 @@ void Controller::handlePlay()
         // Set current track
         player.setTrack((num - 1));
         // Set current songlist
-        player.setSonglist(parseTabtofilepaths());
+        player.setSonglist(executing_listfilepath);
         // Set current file list
-        player.setMediafile(parseTabtofiles());
+        player.setMediafile(executing_lisfile);
         // Play song
-        player.play(parseTabtofilepaths()[num - 1]);
+        player.play(executing_listfilepath[num - 1]);
+
         /*Send message to blink GREEN led and turn off led RED*/
         std::string blinkgreen_message;
         // create message
@@ -470,24 +480,38 @@ void Controller::handleSwitchTab(const Tab tab)
 {
     if (tab != view.gettab())
     {
+        //push current tab to stack
         tabHistory.push(tab);
         if (tab == HOME)
         {
+            //Set current tab to display
             view.settab(HOME);
+            //Set filelist to display
+            view.setdisplayfilelist(parseTabtofiles());
         }
         else if (tab == MUSIC)
         {
+            //Set current tab to display
             view.settab(MUSIC);
+            //Set filelist to display
+            view.setdisplayfilelist(parseTabtofiles());
         }
         else if (tab == VIDEO)
         {
+            //Set current tab to display
             view.settab(VIDEO);
+            //Set filelist to display
+            view.setdisplayfilelist(parseTabtofiles());
         }
         else
         {
+            //Set current tab to display
             view.settab(HOME);
+            //Set filelist to display
+            view.setdisplayfilelist(parseTabtofiles());
         }
-        view.setpage(0);
+        //Set start page is 1
+        view.setpage(1);
     }
 }
 
@@ -584,7 +608,7 @@ void Controller::handleNextPage()
 {
     int page = view.getpage();
     page++;
-    if (page < view.gettotalpage(parseTabtofiles()))
+    if (page < (view.gettotalpage(parseTabtofiles()) + 1))
     {
         view.setpage(page);
     }
@@ -593,7 +617,7 @@ void Controller::handleNextPage()
 void Controller::handlePrevPage()
 {
     int currentPage = view.getpage();
-    if (view.getpage() > 0)
+    if (view.getpage() > 1)
     {
         currentPage--;
         view.setpage(currentPage);
@@ -614,5 +638,6 @@ void Controller::handleBack()
     {
         tabHistory.pop();
         view.settab(tabHistory.top());
+        view.setdisplayfilelist(parseTabtofiles());
     }
 }

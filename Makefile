@@ -7,7 +7,8 @@ PATH_OUTPUT := ./Output
 CC = g++
 #Flag
 CCFLAGS = -c -std=c++17 -I /usr/include/taglib
-LDFLAGS = -ltag -lSDL2 -lSDL2_mixer -lpthread -lavformat -lavcodec -lavutil -pthread
+LDFLAGS = -ltag -lSDL2 -lSDL2_mixer -lpthread -lavformat -lavcodec -lavutil -lswresample -lswscale -pthread
+
 #Library
 #Include files
 INC_DIRS += App/Model\

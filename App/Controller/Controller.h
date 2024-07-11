@@ -11,6 +11,7 @@
 #include <queue>
 
 #define TOTAL_MODE 16
+#define USB_TOTAL_MODE 3
 class Controller
 {
 public:
@@ -22,6 +23,8 @@ public:
     void run();
     //void controlThreads(bool state);
     void continuousPlaybackTimeDisplay(Player& player, std::atomic<bool>& displayFlag);
+
+    
 private:
     std::vector<MediaFile> &parseTabtofiles();
     std::vector<std::string> &parseTabtofilepaths();
@@ -46,6 +49,7 @@ private:
     std::stack<Tab> tabHistory;
     static Player *playerptr;
     std::string cur_dir;
+
     void getInputFromSerial();
     void getInputFromCin();
     void executeTask();
@@ -72,10 +76,15 @@ private:
     std::mutex queueMutex;
     std::condition_variable condition;
     bool running = true;
+
+    char usb_mode = '1';
+    uint8_t usb_num_mode = 0;
     char mode = '1';
     uint8_t num_mode = 0;
     int num_song = 0;
     int current_song = 0;
+
+    
     std::condition_variable cv;
     bool exitFlag = false;
     bool isModePrinted = false;
@@ -88,7 +97,14 @@ private:
     std::atomic<bool> displayFlag;
     void startDisplayThread();
     void stopDisplayThread();
-    Tab executing_tab = MUSIC;
+    std::vector<MediaFile> executing_lisfile;
+    std::vector<std::string> executing_listfilepath;
+
+
+
+
+
+
 };
 
 #endif // CONTROLLER_H
