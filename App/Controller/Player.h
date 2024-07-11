@@ -43,7 +43,6 @@ public:
     void play(const std::string &filepath);
     void pause();
     void resume();
-    bool init();
     void stop();
     void next();
     void previous();
@@ -58,9 +57,10 @@ public:
     int getcurrenttrack();
     std::atomic<bool> quitTimeThread;
     uint32_t getduration() ;
-private: 
     void RepeatOneSong();
-    void RepaetAllSong();
+    void RepeatAllSong();
+private: 
+
     void audioThread(const std::string& filePath);
     std::thread playerThread;
     std::atomic<bool> isPlaying;
@@ -71,7 +71,7 @@ private:
     std::vector<MediaFile> mediafile;
     const int Volume_Step = 1;
     bool repeatSingleSong = false;
-    uint32_t duration =0;
+    int duration =0;
     std::condition_variable cv;
     std::mutex cv_m;
     std::thread timeThread;

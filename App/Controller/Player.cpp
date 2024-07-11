@@ -26,9 +26,6 @@ Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2),q
 }
 
 Player::~Player() {
-    // if (playThread.joinable()) {
-    //     playThread.join();
-    // }
     // Clean up resources
     if (music_Data.music != nullptr) {
         Mix_FreeMusic(music_Data.music);
@@ -38,14 +35,14 @@ Player::~Player() {
     SDL_Quit();
 }
 
-void Player::RepeatOneSong() {
+void Player::RepeatAllSong() {
     std::cout << "Mode play all track: ON" << std::endl;
     repeatSingleSong = false;
 }
 int Player::getcurrenttrack(){
     return music_Data.currentTrack;
 }
-void Player::RepaetAllSong() {
+void Player::RepeatOneSong() {
     std::cout << "Mode play single track: ON" << std::endl;
     repeatSingleSong = true;
 }
@@ -58,21 +55,6 @@ void Player::play(const std::string &filepath) {
    if (isPlaying) {
         stop();
     }
-    //std::cout << mediafile[music_Data.currentTrack].getTitle() << std::endl;
-    // playThread = std::thread([this, file]() {
-    //     // Implementation to play the media file using SDL2
-    //     std::cout << "Playing: " << file << std::endl;
-    //     while (isPlaying) {
-    //         if (isPaused) {
-    //             SDL_Delay(100);
-    //             continue;
-    //         }
-    //         // Play the media file
-    //         SDL_Delay(1000); // Simulating playing
-    //     }
-    //     std::cout << "Stopped playing: " << file << std::endl;
-    // });
-
     // Free current music
     if (music_Data.music != nullptr) {
         Mix_FreeMusic(music_Data.music);
@@ -117,13 +99,8 @@ void Player::resume() {
 }
 
 void Player::stop() {
-    // if (isPlaying) {
-    //     isPlaying = false;
-    //     if (playThread.joinable()) {
-    //         playThread.join();
-    //     }
-    //     std::cout << "Stopped" << std::endl;
-    // }
+    music_Data.startTime = 0;
+    duration = 0;
     // Stop if anyway
     if (Mix_PlayingMusic()) {
         stopflag = true;
@@ -163,24 +140,7 @@ void Player::setVolume(char volume) {
 void Player::setTrack(int track){
         this->music_Data.currentTrack = track;
     }
-bool Player :: init()
 
-{
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_AUDIO) < 0)
-    {
-        std::cerr << "SDL could not initialize! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-    // Initialize SDL_mixer
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-    {
-        std::cerr << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << std::endl;
-        return false;
-    }
-
-    return true;
-}
 void Player::FunctionCallback() {
     if(!stopflag){
         if (repeatSingleSong) {
@@ -197,7 +157,10 @@ void Player ::CalculateCurrentTime() {
 
         if (quitTimeThread) break;
         if (music_Data.music != nullptr && Mix_PlayingMusic() && !isPaused) {
-            Uint32 currentTimeMs = SDL_GetTicks() - music_Data.startTime;
+            int currentTimeMs = SDL_GetTicks() - music_Data.startTime;
+            if (currentTimeMs <= 0){
+                currentTimeMs = 0;
+            }
             duration = currentTimeMs / 1000;
 
         }

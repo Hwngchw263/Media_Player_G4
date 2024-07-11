@@ -26,6 +26,7 @@ void Controller::MusicFinishedCallbackWrapper()
 void Controller::run()
 {
     /*Send data to reset in MCU*/
+
     std::string reset_message;
     // create message
     mcu_data.createMessage('R', 0);
@@ -50,7 +51,7 @@ void Controller::getInputFromSerial()
 {
     while (running)
     {
-        view.displayMetadata(parseTabtofiles(),player.getduration(), player.getcurrenttrack());
+        view.displayPage(parseTabtofiles(),player.getduration(), player.getcurrenttrack());
         std::string message = sp.receiveData();
         if (!message.empty())
         {
@@ -59,7 +60,7 @@ void Controller::getInputFromSerial()
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
                 mcu_data.ParseMessage(message);
-                messageValid = mcu_data.VerifyMessage(mcu_data.getmess(), message);
+                messageValid = mcu_data.VerifyMessage(mcu_data.getmess());
             }
             if (messageValid)
             {
@@ -79,7 +80,7 @@ void Controller::getInputFromCin()
 {
     while (running)
     {
-        view.displayMetadata(parseTabtofiles(),player.getduration(),player.getcurrenttrack());
+        view.displayPage(parseTabtofiles(),player.getduration(),player.getcurrenttrack());
         char cmd;
         if (!is_playing)
         {
@@ -102,8 +103,7 @@ void Controller::getInputFromCin()
 
 void Controller::processMessage(const std::string &message)
 {
-    std::string tempstr = message;
-    if (mcu_data.VerifyMessage(mcu_data.getmess(), tempstr))
+    if (mcu_data.VerifyMessage(mcu_data.getmess()))
     {
         // std::cout << "Message true.\n" << std::endl;
         // std::cout << "Type: " << mcu_data.getmess().type << std::endl;
@@ -140,15 +140,14 @@ void Controller::handleModeAndSongSelection()
 {
 
     // std::cout << "lock mode" << std::endl;
-    mode = mcu_data.PareMode(mcu_data.getmess().data, TOTAL_MODE);
+    mode = mcu_data.PareMode(num_mode, TOTAL_MODE);
     {
         std::unique_lock<std::mutex> lock(numsong_mutex);
-        // std::cout << "lock Numsongmode" << std::endl;
-        numsong = mcu_data.getmess().data % sizeof(parseTabtofiles());
-        // std::cout << "\033[A\033[2K";
+        int total_song = sizeof(parseTabtofiles());
+        current_song = mcu_data.PareNumsong(num_song, total_song);
         if (is_playing)
         {
-            std::cout << "Song: " << numsong << std::endl;
+            std::cout << "Song: " << current_song << std::endl;
         }
         else
         {
@@ -233,6 +232,12 @@ void Controller::handleInput(const char &input)
     case '6':
         std::cout << "\nprevious music\n";
         handlePrevious();
+        break;
+    case '7':
+        player.RepeatAllSong();
+        break;
+    case '8':
+        player.RepeatOneSong();
         break;
     case '+':
         handleVolume('+');
@@ -331,7 +336,6 @@ void Controller::handlePlay()
     std::cout << "Enter song to play:  \n";
     int num;
     std::string task;
-    // taskQueue.push("S");
     // Get data from queue
     {
         std::unique_lock<std::mutex> lock(queueMutex);
@@ -346,7 +350,7 @@ void Controller::handlePlay()
         if (task == "S")
         {
             std::unique_lock<std::mutex> lock(numsong_mutex);
-            num = numsong;
+            num = current_song;
         }
         // Run with input from Cin
         else
@@ -417,24 +421,26 @@ void Controller::handleStop()
 void Controller::handleNext()
 {
     player.next();
-    std::string blinkred_message;
+    /*Send message to blink GREEN led and turn off led RED*/
+    std::string blinkgreen_message;
     // create message
     mcu_data.createMessage('O', 1);
     // convert message to string
-    mcu_data.messageToString(mcu_data.getmess(), blinkred_message);
+    mcu_data.messageToString(mcu_data.getmess(), blinkgreen_message);
     // Send string to MCU
-    sp.sendData(blinkred_message);
+    sp.sendData(blinkgreen_message);
 }
 void Controller::handlePrevious()
 {
     player.previous();
-    std::string blinkred_message;
+    /*Send message to blink GREEN led and turn off led RED*/
+    std::string blinkgreen_message;
     // create message
     mcu_data.createMessage('O', 1);
     // convert message to string
-    mcu_data.messageToString(mcu_data.getmess(), blinkred_message);
+    mcu_data.messageToString(mcu_data.getmess(), blinkgreen_message);
     // Send string to MCU
-    sp.sendData(blinkred_message);
+    sp.sendData(blinkgreen_message);
 }
 void Controller::handleVolume(char volume)
 {
@@ -468,7 +474,6 @@ void Controller::handleSwitchTab(const Tab tab)
         }
         view.setpage(0);
     }
-    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handleEditMetadata()
@@ -558,7 +563,6 @@ void Controller::handleEditMetadata()
         // get path after change
         model.setDirectory(cur_dir);
     }
-    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handleNextPage()
@@ -569,7 +573,6 @@ void Controller::handleNextPage()
     {
         view.setpage(page);
     }
-    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handlePrevPage()
@@ -580,7 +583,6 @@ void Controller::handlePrevPage()
         currentPage--;
         view.setpage(currentPage);
     }
-    //view.displayMetadata(parseTabtofiles());
 }
 
 void Controller::handleRemoveFile()
@@ -590,9 +592,7 @@ void Controller::handleRemoveFile()
     std::cin >> num;
     // Check valid of num
     model.removeFile(parseTabtofilepaths(), num);
-    //view.displayMetadata(parseTabtofiles());
 }
-
 void Controller::handleBack()
 {
     if (tabHistory.size() > 1)
@@ -600,5 +600,4 @@ void Controller::handleBack()
         tabHistory.pop();
         view.settab(tabHistory.top());
     }
-    //view.displayMetadata(parseTabtofiles());
 }

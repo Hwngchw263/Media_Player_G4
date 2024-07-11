@@ -14,10 +14,13 @@ public:
     std::string convertSecondsToTimeString(int totalSeconds);
     void printLine(char c, int width);
     void clearScreen();
-    void displayPath(std::vector<std::string>& files);
-    void displayMetadata(std::vector<MediaFile>& files,uint32_t  duration, int cur_song);
-    void displayHelp();
-    void displayPage(std::vector<std::string>& files);
+    void displayTabBar();
+    void displayMenuBar();
+    void displayPlaybackBar();
+    void displayMetadata(std::vector<MediaFile>& files);
+    void displayProgressBar(std::vector<MediaFile>& files,int duration, int cur_song);
+    void displayTitleVolumeBar(std::vector<MediaFile>& files, int cur_song);
+    void displayPage(std::vector<MediaFile>& files,uint32_t  duration, int cur_song);
     void displaySelection();
     int getpage();
     void setpage(int page);
