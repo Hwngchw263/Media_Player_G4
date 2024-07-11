@@ -73,7 +73,9 @@ private:
     std::condition_variable condition;
     bool running = true;
     char mode = '1';
-    uint16_t numsong = 1;
+    uint8_t num_mode = 0;
+    int num_song = 0;
+    int current_song = 0;
     std::condition_variable cv;
     bool exitFlag = false;
     bool isModePrinted = false;
@@ -86,6 +88,7 @@ private:
     std::atomic<bool> displayFlag;
     void startDisplayThread();
     void stopDisplayThread();
+    Tab executing_tab = MUSIC;
 };
 
 #endif // CONTROLLER_H
