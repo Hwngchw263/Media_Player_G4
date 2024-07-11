@@ -9,6 +9,7 @@
 #include <string>
 #include <condition_variable>
 #include <queue>
+#incude "USB.h"
 
 #define TOTAL_MODE 16
 #define USB_TOTAL_MODE 3
@@ -100,7 +101,7 @@ private:
     std::vector<MediaFile> executing_lisfile;
     std::vector<std::string> executing_listfilepath;
 
-
+    USB usb;
 
 
 

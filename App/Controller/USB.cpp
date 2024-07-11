@@ -87,6 +87,7 @@ void USB :: playFromFolder() {
 
     std::cout << "Enter path to folder: ";
     std::cin.ignore(); // To clear the newline character left by previous input
+    //1355=1
     std::getline(std::cin, baseDir);
 
     Controller controller1;
@@ -119,7 +120,7 @@ void USB::handleInputUSB(const char &input){
                 //playFromFolder();
                 break;
             case '3':
-                handleExitUSBmenu()
+                handleExitUSBmenu();
             default:
                 std::cout << "Invalid choice. Please try again.\n";
                 break;
@@ -134,5 +135,5 @@ void USB::handleUSB(){
     playFromUSB();
 }
 void USB::handleFolder(){
-    playFromFolder() 
+    playFromFolder(); 
 }

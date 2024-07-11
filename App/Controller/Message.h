@@ -33,7 +33,7 @@ public:
     /// Function to create message
     void createMessage(char type, uint16_t data);
     // Function to verify message
-    bool VerifyMessage(Message &msg);
+    bool VerifyMessage(Message &msg,std::string messsage);
     // Function to parse message
     void ParseMessage(std::string &receiver_data);
     // Function parse data to take mode
