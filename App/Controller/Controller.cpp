@@ -4,7 +4,7 @@
 #include <algorithm>
 
 Player *Controller::playerptr = nullptr;
-Controller::Controller() : sp(" "), serial_command_received(false),serial_port_initialized(false)
+Controller::Controller() : sp(" "), serial_command_received(false)
 {
     Mix_VolumeMusic(1);
     // Configure for serial port
