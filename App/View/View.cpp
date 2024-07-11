@@ -33,12 +33,12 @@ void View::displayTabBar(){
     printLine('=',200);
     std::cout << std::left
     << std::setw(1) << "|"
-    << std::setw(33) << "Back[b]" 
-    << std::setw(33) << "Home[f]"
-    << std::setw(33) << "Music library[R]"
-    << std::setw(33) << "Video library[d]"
-    << std::setw(33) << "Playlists[y]" 
-    << std::setw(33) << "Quit[q]" 
+    << std::setw(33) << "[b] Back" 
+    << std::setw(33) << "[h] Home"
+    << std::setw(33) << "[m] Music library"
+    << std::setw(33) << "[v] Video library"
+    << std::setw(33) << "[y] Playlists" 
+    << std::setw(33) << "[q] Quit" 
     << std::setw(1) << "|"
     << std::endl;
     printLine('-',200);
@@ -46,25 +46,25 @@ void View::displayTabBar(){
 //Function to display menu bar
 void View::displayMenuBar(){
     //Menu
-    std::cout << std::left << std::setw(199) << "| Remove [t]" << "|" << std::endl;
-    std::cout << std::setw(199) << "| Add to playlist[a]" << "|" << std::endl;
-    std::cout << std::setw(199) << "| Edit [e]" << "|" << std::endl; 
-    std::cout << std::setw(199) << "| Previous page[p]" << "|" << std::endl;
-    std::cout << std::setw(199) << "| Next page[n]" << "|" << std::endl;
+    std::cout << std::left << std::setw(199) << "| [r] Remove" << "|" << std::endl;
+    std::cout << std::setw(199) << "| [a] Add to playlist" << "|" << std::endl;
+    std::cout << std::setw(199) << "| [e] Edit" << "|" << std::endl; 
+    std::cout << std::setw(199) << "| [<] Previous page" << "|" << std::endl;
+    std::cout << std::setw(199) << "| [>] Next page" << "|" << std::endl;
     printLine('-',200);
 }
 void View::displayPlaybackBar(){
     //Playback
     std::cout << std::left
     << std::setw(5) << "|"
-    << std::setw(21) << "Previous[6]"
-    << std::setw(21) << "Play[1]" 
-    << std::setw(21) << "Pause[2]"
-    << std::setw(21) << "Resume[3]"  
-    << std::setw(21) << "Stop[4]"
-    << std::setw(21) << "Next[5]"
-    << std::setw(21) << "Repeat all[7]"
-    << std::setw(21) << "Repeat one[8]"
+    << std::setw(21) << "[6] Previous"
+    << std::setw(21) << "[1] Play" 
+    << std::setw(21) << "[2] Pause"
+    << std::setw(21) << "[3] Resume"  
+    << std::setw(21) << "[4] Stop"
+    << std::setw(21) << "[5] Next"
+    << std::setw(21) << "[m] Repeat one"
+    << std::setw(21) << "[l] Repeat all"
     << std::setw(21) << "Volume[+][-]"
     << std::right 
     << std::setw(6) << "|"
@@ -102,11 +102,11 @@ void View::displayTitleVolumeBar(std::vector<MediaFile>& files, int cur_song){
     printLine('=',200);
 }
 //Function to display metadata
-void View::displayMetadata(std::vector<MediaFile>& files) {
-    if(files.size() != 0){
-    totalPage = 1 + (files.size() - 1)/ITEMS_PER_PAGE;
+void View::displayMetadata() {
+    if(displayfilelist.size() != 0){
+    totalPage = 1 + (displayfilelist.size() - 1)/ITEMS_PER_PAGE;
     int start = currentPage * ITEMS_PER_PAGE;
-    int end = std::min((currentPage+1) * ITEMS_PER_PAGE, static_cast<int>(files.size()));
+    int end = std::min((currentPage+1) * ITEMS_PER_PAGE, static_cast<int>(displayfilelist.size()));
         if(currentTab == HOME){
         //Media
             std::cout << std::left
@@ -120,15 +120,15 @@ void View::displayMetadata(std::vector<MediaFile>& files) {
             printLine('-',200);
             for (int i = start; i < end; ++i) {
                 //50 characters title
-                std::string title = files[i].getTitle();
+                std::string title = displayfilelist[i].getTitle();
                 if (title.length() > 50) {
                     title = title.substr(0, 50);
                 }
                 std::cout << std::left
                 << "| " << std::setw(4) << (i+1)  
-                << "| " << std::setw(151) << files[i].getName() 
-                << "| " << std::setw(18) << files[i].getType()
-                << "| " << std::setw(18) << files[i].getSize() 
+                << "| " << std::setw(151) << displayfilelist[i].getName() 
+                << "| " << std::setw(18) << displayfilelist[i].getType()
+                << "| " << std::setw(18) << displayfilelist[i].getSize() 
                 << std::right
                 <<std::setw(1) << "|"
                 << std::endl;
@@ -149,16 +149,16 @@ void View::displayMetadata(std::vector<MediaFile>& files) {
             printLine('-',200); 
             for (int i = start; i < end; ++i) {
                 //50 characters title
-                std::string title = files[i].getTitle();
+                std::string title = displayfilelist[i].getTitle();
                 if (title.length() > 50) {
                     title = title.substr(0, 50);
                 }
                 std::cout << std::left
                 << "| " << std::setw(4) << (i+1)  
-                << "| " << std::setw(131) << files[i].getName() 
-                << "| " << std::setw(18) << files[i].getSize()
-                << "| " << std::setw(18) << files[i].getBitrate() 
-                << "| " << std::setw(18) << convertSecondsToTimeString(files[i].getDuration()) 
+                << "| " << std::setw(131) << displayfilelist[i].getName() 
+                << "| " << std::setw(18) << displayfilelist[i].getSize()
+                << "| " << std::setw(18) << displayfilelist[i].getBitrate() 
+                << "| " << std::setw(18) << convertSecondsToTimeString(displayfilelist[i].getDuration()) 
                 << std::right
                 <<std::setw(1) << "|"
                 << std::endl;
@@ -181,18 +181,18 @@ void View::displayMetadata(std::vector<MediaFile>& files) {
             printLine('-',200);
             for (int i = start; i < end; ++i) {
                 //50 characters title
-                std::string title = files[i].getTitle();
+                std::string title = displayfilelist[i].getTitle();
                 if (title.length() > 50) {
                     title = title.substr(0, 50);
                 }
                 std::cout << std::left
                 << "| " << std::setw(4) << (i+1) 
                 << "| " << std::setw(51) << title  
-                << "| " << std::setw(38) << files[i].getArtist() 
-                << "| " << std::setw(28) << files[i].getAlbum()
-                << "| " << std::setw(28) << files[i].getGenre() 
-                << "| " << std::setw(18) << files[i].getYear()
-                << "| " << std::setw(18) << convertSecondsToTimeString(files[i].getDuration()) 
+                << "| " << std::setw(38) << displayfilelist[i].getArtist() 
+                << "| " << std::setw(28) << displayfilelist[i].getAlbum()
+                << "| " << std::setw(28) << displayfilelist[i].getGenre() 
+                << "| " << std::setw(18) << displayfilelist[i].getYear()
+                << "| " << std::setw(18) << convertSecondsToTimeString(displayfilelist[i].getDuration()) 
                 << std::right
                 <<std::setw(1) << "|"
                 << std::endl;
@@ -222,26 +222,29 @@ void View::displayMetadata(std::vector<MediaFile>& files) {
 }
 
 //Function to display full page
-void View::displayPage(std::vector<MediaFile>& files,uint32_t  duration, int cur_song){
+void View::displayPage(std::vector<MediaFile>& executing_files, int  duration, int cur_song){
     //Clear page
     clearScreen();
     displayTabBar();
-    displayMetadata(files);
+    displayMetadata();
     displayMenuBar();
     displayPlaybackBar();
-    displayProgressBar(files, duration, cur_song);
-    displayTitleVolumeBar(files, cur_song);
+    displayProgressBar(executing_files, duration, cur_song);
+    displayTitleVolumeBar(executing_files, cur_song);
 }
 
 int View::getpage(){
-    return currentPage;
+    return (currentPage + 1);
 }
 void View::setpage(int page){
-    this->currentPage = page;
+    this->currentPage = (page - 1);
 }
 Tab View::gettab(){
-    return currentTab;
+    return this->currentTab;
 }
 void View::settab(Tab tab){
     this->currentTab = tab;
+}
+void View::setdisplayfilelist(std::vector<MediaFile>& files){
+    this->displayfilelist = files;
 }
