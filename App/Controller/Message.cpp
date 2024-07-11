@@ -64,7 +64,7 @@ char DATAMCU::PareMode(uint8_t& mode, uint8_t total_mode)
     else{
         mode--;
     }
-    //Convert to range 0-total_mode
+    //Convert to range 0 - total_mode
     uint8_t value = mode % total_mode;
     //Convert to char
     if (value >= 0 && value <= 9)
@@ -90,7 +90,7 @@ int DATAMCU::PareNumsong(int& numsong, int total_file)
     else{
         numsong--;
     }
-    //Convert to range 0-total_mode
+    //Convert to range 0 - total_file
     return (numsong % total_file);
 
 }
