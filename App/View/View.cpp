@@ -17,12 +17,7 @@ void View::printLine(char c, int width){
     std::string line(width, c);
     std::cout << line << std::endl;
 }
-void View::displayPath(std::vector<std::string>& files){
-    std::cout << "Path." << std::endl;
-    for(int i = 0; i < files.size(); i++){
-        std::cout << files[i] << std::endl;
-    }
-}
+
 //Clear screen
 void View::clearScreen() {
     std::cout << "\033[2J\033[1;1H"; // ANSI escape code to clear the screen and move the cursor to the top-left corner
@@ -32,9 +27,9 @@ int View::gettotalpage(std::vector<MediaFile>& files){
     return totalPage;
 } 
 
-void View::displayMetadata(std::vector<MediaFile>& files,uint32_t  duration, int cur_song) {
-    clearScreen();
-    //Tab
+//Function to display tab bar
+void View::displayTabBar(){
+   //Tab
     printLine('=',200);
     std::cout << std::left
     << std::setw(1) << "|"
@@ -47,6 +42,67 @@ void View::displayMetadata(std::vector<MediaFile>& files,uint32_t  duration, int
     << std::setw(1) << "|"
     << std::endl;
     printLine('-',200);
+}
+//Function to display menu bar
+void View::displayMenuBar(){
+    //Menu
+    std::cout << std::left << std::setw(199) << "| Remove [t]" << "|" << std::endl;
+    std::cout << std::setw(199) << "| Add to playlist[a]" << "|" << std::endl;
+    std::cout << std::setw(199) << "| Edit [e]" << "|" << std::endl; 
+    std::cout << std::setw(199) << "| Previous page[p]" << "|" << std::endl;
+    std::cout << std::setw(199) << "| Next page[n]" << "|" << std::endl;
+    printLine('-',200);
+}
+void View::displayPlaybackBar(){
+    //Playback
+    std::cout << std::left
+    << std::setw(5) << "|"
+    << std::setw(21) << "Previous[6]"
+    << std::setw(21) << "Play[1]" 
+    << std::setw(21) << "Pause[2]"
+    << std::setw(21) << "Resume[3]"  
+    << std::setw(21) << "Stop[4]"
+    << std::setw(21) << "Next[5]"
+    << std::setw(21) << "Repeat one[m]"
+    << std::setw(21) << "Repeat all[l]"
+    << std::setw(21) << "Volume[+][-]"
+    << std::right 
+    << std::setw(6) << "|"
+    << std::endl;
+    printLine('-',200);
+}
+//Function to display progress bar
+void View::displayProgressBar(std::vector<MediaFile>& files,int duration, int cur_song){
+    //Progress bar
+    int numchar = 170*duration/(files[cur_song].getDuration());
+    int notrun  = 170 - numchar;
+    std::string runline(numchar, '#');
+    std::string line((170-numchar), '-');
+    std::cout << std::left
+    << std::setw(2) << "|"
+    << std::setw(12) << convertSecondsToTimeString(duration)
+    << "<"
+    << std::setw(numchar) << runline
+    << std::setw(notrun) << line
+    << ">"
+    << std::right 
+    << std::setw(12) << convertSecondsToTimeString(files[cur_song].getDuration() - duration)
+    << std::setw(2) << "|"
+    << std::endl;
+}
+//Function to display title and volume bar
+void View::displayTitleVolumeBar(std::vector<MediaFile>& files, int cur_song){
+    //Title, volume
+    std::cout << std::left
+    << std::setw(6) << "|"
+    << std::setw(188) << files[cur_song].getTitle()
+    << std::right 
+    << std::setw(6) << "|"
+    << std::endl;
+    printLine('=',200);
+}
+//Function to display metadata
+void View::displayMetadata(std::vector<MediaFile>& files) {
     if(files.size() != 0){
     totalPage = 1 + (files.size() - 1)/ITEMS_PER_PAGE;
     int start = currentPage * ITEMS_PER_PAGE;
@@ -163,74 +219,20 @@ void View::displayMetadata(std::vector<MediaFile>& files,uint32_t  duration, int
         << std::endl;
         printLine('-',200);
     }
-    //Menu
-    std::cout << std::left
-    << std::setw(1) << "|"
-    << std::setw(33) << "Remove [t]"
-    << std::setw(33) << "Add to playlist[a]"
-    << std::setw(33) << "Edit [e]" 
-    << std::setw(33) << "Previous page[p]"
-    << std::setw(33) << "Goto page[g]"
-    << std::setw(33) << "Next page[n]"
-    << std::right
-    << std::setw(1) << "|"
-    << std::endl;
-    printLine('-',200);
-    //Playback
-    std::cout << std::left
-    << std::setw(5) << "|"
-    << std::setw(21) << "Previous[6]"
-    << std::setw(21) << "Play[1]" 
-    << std::setw(21) << "Pause[2]"
-    << std::setw(21) << "Resume[3]"  
-    << std::setw(21) << "Stop[4]"
-    << std::setw(21) << "Next[5]"
-    << std::setw(21) << "Repeat one[m]"
-    << std::setw(21) << "Repeat all[l]"
-    << std::setw(21) << "Volume[+][-]"
-    << std::right 
-    << std::setw(6) << "|"
-    << std::endl;
-    printLine('=',200);
-    std::cout<< convertSecondsToTimeString(duration)<< std::endl;
-    std::cout << files[cur_song].getTitle() << std::endl;
-    int numchar = 198*duration/(files[cur_song].getDuration());
-    std::cout << "<";
-    std::string line(numchar, '#');
-    std::cout << line ;
-    std::cout << std::right << std::setw(200) <<">" << std::endl;
+}
 
+//Function to display full page
+void View::displayPage(std::vector<MediaFile>& files,uint32_t  duration, int cur_song){
+    //Clear page
+    clearScreen();
+    displayTabBar();
+    displayMetadata(files);
+    displayMenuBar();
+    displayPlaybackBar();
+    displayProgressBar(files, duration, cur_song);
+    displayTitleVolumeBar(files, cur_song);
 }
-void View::displayPage(std::vector<std::string>& files) {
-    //Clear screen
-    int start = currentPage * ITEMS_PER_PAGE;
-    int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(files.size()));
 
-    if (start < files.size()) {
-        std::vector<std::string> pageFiles(files.begin() + start, files.begin() + end);
-        //view.displayMediaFiles(pageFiles);
-        for (const auto& file : pageFiles) {
-            //displayMetadata();
-        }
-    } else {
-        std::cout << "No files to display." << std::endl;
-    }
-}
-void View::displayHelp() {
-    std::cout << "Available commands:" << std::endl;
-    std::cout << "play <file>       - Play a media file" << std::endl;
-    std::cout << "pause             - Pause playback" << std::endl;
-    std::cout << "resume            - Resume playback" << std::endl;
-    std::cout << "stop              - Stop playback" << std::endl;
-    std::cout << "volume <level>    - Set volume level (0-100)" << std::endl;
-    std::cout << "exit              - Exit the application" << std::endl;
-    std::cout << "switch_tab <tab>  - Switch to a tab (home, music, video)" << std::endl;
-    std::cout << "edit_metadata <file> <key> <value> - Edit metadata of a file" << std::endl;
-    std::cout << "next_page         - Go to the next page of media files" << std::endl;
-    std::cout << "prev_page         - Go to the previous page of media files" << std::endl;
-    std::cout << "remove_file <file> - Remove a media file" << std::endl;
-    std::cout << "back              - Go back to the previous tab" << std::endl;
-}
 int View::getpage(){
     return currentPage;
 }
