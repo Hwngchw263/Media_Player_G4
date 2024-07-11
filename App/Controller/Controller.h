@@ -19,9 +19,9 @@ public:
     void handleInput(const char &input);
     void handleSetDirectory(const std::string &directory);
     static void MusicFinishedCallbackWrapper();
-
     void run();
-
+    //void controlThreads(bool state);
+    void continuousPlaybackTimeDisplay(Player& player, std::atomic<bool>& displayFlag);
 private:
     std::vector<MediaFile> &parseTabtofiles();
     std::vector<std::string> &parseTabtofilepaths();
@@ -73,11 +73,22 @@ private:
     std::condition_variable condition;
     bool running = true;
     char mode = '1';
-    uint16_t numsong = 1;
+    uint8_t num_mode = 0;
+    int num_song = 0;
+    int current_song = 0;
     std::condition_variable cv;
     bool exitFlag = false;
     bool isModePrinted = false;
     std::mutex printMutex;
+   
+    // std::mutex controlMutex;
+    // std::condition_variable controlCondition;
+    // bool running_thread = true;
+    std::thread displayThread;
+    std::atomic<bool> displayFlag;
+    void startDisplayThread();
+    void stopDisplayThread();
+    Tab executing_tab = MUSIC;
 };
 
 #endif // CONTROLLER_H

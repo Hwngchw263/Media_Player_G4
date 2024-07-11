@@ -34,7 +34,7 @@ bool DATAMCU::VerifyMessage(Message &msg)
 }
 
 // Function to parse message
-char DATAMCU::ParseMessage(std::string &receiver_data)
+void DATAMCU::ParseMessage(std::string &receiver_data)
 {
     if (!receiver_data.empty())
     {
@@ -55,23 +55,45 @@ Message &DATAMCU::getmess()
     return this->mess;
 }
 // Function parse data to take mode
-char DATAMCU::PareMode(uint16_t value, uint8_t total_mode)
+char DATAMCU::PareMode(uint8_t& mode, uint8_t total_mode)
 {
-    uint8_t mode = value % total_mode;
-    if (mode >= 0 && mode <= 9)
-    {
-        return static_cast<char>('0' + mode);
+    //Change number of mode
+    if(mess.data == 1){
+        mode++;
     }
-    else if (mode >= 10 && mode <= 15)
+    else{
+        mode--;
+    }
+    //Convert to range 0-total_mode
+    uint8_t value = mode % total_mode;
+    //Convert to char
+    if (value >= 0 && value <= 9)
     {
-        return static_cast<char>('A' + (mode - 10));
+        return static_cast<char>('0' + value);
+    }
+    else if (value >= 10 && value <= 15)
+    {
+        return static_cast<char>('A' + (value - 10));
     }
     else
     {
         return '?';
     }
 }
+// Function parse data to take numsong
+int DATAMCU::PareNumsong(int& numsong, int total_file)
+{
+    //Change number of mode
+    if(mess.data == 1){
+        numsong++;
+    }
+    else{
+        numsong--;
+    }
+    //Convert to range 0-total_mode
+    return (numsong % total_file);
 
+}
 // Function to convert hexa number to hexa string
 std::string DATAMCU::hexToString(uint32_t value)
 {

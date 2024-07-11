@@ -43,7 +43,6 @@ public:
     void play(const std::string &filepath);
     void pause();
     void resume();
-    bool init();
     void stop();
     void next();
     void previous();
@@ -52,6 +51,12 @@ public:
     void setSonglist(std::vector<std::string>& songlist);
     void setMediafile(std::vector<MediaFile>& file);
     void setTrack(int track);
+    void CalculateCurrentTime();
+    void StartTimeThread();
+    void StopTimeThread();
+    int getcurrenttrack();
+    std::atomic<bool> quitTimeThread;
+    uint32_t getduration() ;
 private: 
     void RepeatOneSong();
     void RepaetAllSong();
@@ -65,6 +70,11 @@ private:
     std::vector<MediaFile> mediafile;
     const int Volume_Step = 1;
     bool repeatSingleSong = false;
+    int duration =0;
+    std::condition_variable cv;
+    std::mutex cv_m;
+    std::thread timeThread;
+  
 };
 
 #endif // PLAYER_H

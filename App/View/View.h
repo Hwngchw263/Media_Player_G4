@@ -14,10 +14,13 @@ public:
     std::string convertSecondsToTimeString(int totalSeconds);
     void printLine(char c, int width);
     void clearScreen();
-    void displayPath(std::vector<std::string>& files);
+    void displayTabBar();
+    void displayMenuBar();
+    void displayPlaybackBar();
     void displayMetadata(std::vector<MediaFile>& files);
-    void displayHelp();
-    void displayPage(std::vector<std::string>& files);
+    void displayProgressBar(std::vector<MediaFile>& files,int duration, int cur_song);
+    void displayTitleVolumeBar(std::vector<MediaFile>& files, int cur_song);
+    void displayPage(std::vector<MediaFile>& files,uint32_t  duration, int cur_song);
     void displaySelection();
     int getpage();
     void setpage(int page);
@@ -29,6 +32,7 @@ private:
     int totalPage = 0;
     static constexpr int ITEMS_PER_PAGE = 5;
     Tab currentTab = HOME;
+    int currsong = 0;
 };
 
 #endif // VIEW_H
