@@ -7,7 +7,7 @@
 class SerialPort
 {
 public:
-    SerialPort(const char *port);
+    SerialPort(std::string port);
     ~SerialPort();
     bool configure();
     std::string receiveData();

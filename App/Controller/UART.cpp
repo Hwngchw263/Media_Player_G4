@@ -8,23 +8,26 @@
 #include <regex>
 #include <filesystem>
 
-SerialPort::SerialPort(const char *port)
+SerialPort::SerialPort(std::string port ):serial_port(-1)
 {
-    port_name = std::string(port);
-    serial_port = open(port, O_RDWR | O_NONBLOCK);
+    port_name = port;
+}
+
+SerialPort::~SerialPort()
+{   if(serial_port >=0){
+    close(serial_port);
+}
+    
+}
+bool SerialPort::configure()
+{   
+    serial_port = open(port_name.c_str(), O_RDWR | O_NONBLOCK);
 
     if (serial_port < 0)
     {
         std::cerr << "Error " << errno << " opening " << port_name << ": " << strerror(errno) << std::endl;
+        return false;
     }
-}
-
-SerialPort::~SerialPort()
-{
-    close(serial_port);
-}
-bool SerialPort::configure()
-{
     struct termios tty;
     if (tcgetattr(serial_port, &tty) != 0)
     {

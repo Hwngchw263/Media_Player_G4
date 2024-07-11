@@ -4,14 +4,24 @@
 #include <algorithm>
 
 Player *Controller::playerptr = nullptr;
-Controller::Controller() : sp(SerialPort::getOpenSDADevicePath().c_str()), serial_command_received(false)
+Controller::Controller() : sp(""), serial_command_received(false)
 {
     Mix_VolumeMusic(1);
     // Configure for serial port
-    if (!sp.configure())
+    bool khoitao=false;
+    if (!khoitao)
     {
-        std::cerr << "Failed to configure serial port" << std::endl;
-        std::exit(1); // Exit if configuration fails
+        std::string port = SerialPort::getOpenSDADevicePath();
+        if (!port.empty())
+        {
+           sp = SerialPort(port);
+            if (sp.configure())
+            {
+                std::cout << "Serial port " << port << " initialized successfully." << std::endl;
+                //break; // Exit loop after successful initialization
+            }
+            khoitao= true;
+        }
     }
 }
 
@@ -59,7 +69,7 @@ void Controller::getInputFromSerial()
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
                 mcu_data.ParseMessage(message);
-                messageValid = mcu_data.VerifyMessage(mcu_data.getmess());
+                messageValid = mcu_data.VerifyMessage(mcu_data.getmess(),message);
             }
             if (messageValid)
             {
@@ -101,8 +111,9 @@ void Controller::getInputFromCin()
 }
 
 void Controller::processMessage(const std::string &message)
-{
-    if (mcu_data.VerifyMessage(mcu_data.getmess()))
+{      
+    std::string temp = message;
+    if (mcu_data.VerifyMessage(mcu_data.getmess(),temp))
     {
         // std::cout << "Message true.\n" << std::endl;
         // std::cout << "Type: " << mcu_data.getmess().type << std::endl;
