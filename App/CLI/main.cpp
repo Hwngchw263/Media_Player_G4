@@ -21,12 +21,12 @@
 int main() {
     char choice;
     USB usb;
-    SerialPort serial(SerialPort::getOpenSDADevicePath().c_str());
-    if (!serial.configure())
-    {
-        std::cerr << "Failed to configure serial port" << std::endl;
-        std::exit(1); // Exit if configuration fails
-    }
+    // SerialPort serial(SerialPort::getOpenSDADevicePath().c_str());
+    // if (!serial.configure())
+    // {
+    //     std::cerr << "Failed to configure serial port" << std::endl;
+    //     std::exit(1); // Exit if configuration fails
+    // }
     
     while (true) {
         usb.displayMenu();
