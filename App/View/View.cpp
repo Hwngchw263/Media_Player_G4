@@ -63,8 +63,8 @@ void View::displayPlaybackBar(){
     << std::setw(21) << "[3] Resume"  
     << std::setw(21) << "[4] Stop"
     << std::setw(21) << "[5] Next"
-    << std::setw(21) << "[m] Repeat one"
-    << std::setw(21) << "[l] Repeat all"
+    << std::setw(21) << "[7] Repeat one"
+    << std::setw(21) << "[8] Repeat all"
     << std::setw(21) << "Volume[+][-]"
     << std::right 
     << std::setw(6) << "|"

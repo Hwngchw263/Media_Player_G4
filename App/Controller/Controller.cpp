@@ -242,6 +242,12 @@ void Controller::handleInput(const char &input)
         std::cout << "\nprevious music\n";
         handlePrevious();
         break;
+    case '7':
+        player.RepeatOneSong();
+        break;
+    case '8':
+        player.RepeatAllSong();
+        break;
     case '+':
         handleVolume('+');
         break;
