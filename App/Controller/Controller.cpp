@@ -4,7 +4,7 @@
 #include <algorithm>
 
 Player *Controller::playerptr = nullptr;
-Controller::Controller() : sp(" "), serial_command_received(false)
+Controller::Controller() : sp(""), serial_command_received(false)
 {
     Mix_VolumeMusic(1);
     // Configure for serial port
@@ -252,6 +252,12 @@ void Controller::handleInput(const char &input)
         std::cout << "\nprevious music\n";
         handlePrevious();
         break;
+    case '7':
+        player.RepeatOneSong();
+        break;;
+    case '8':
+        player.RepeatAllSong();
+        break;
     case '+':
         handleVolume('+');
         break;
@@ -259,7 +265,9 @@ void Controller::handleInput(const char &input)
         handleVolume('-');
         break;
     case 'q':
+        
         handleExit();
+        //return;
         break;
     case 'h':
         handleSwitchTab(HOME);

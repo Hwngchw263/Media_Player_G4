@@ -76,7 +76,7 @@ private:
     std::queue<std::string> taskQueue;
     std::mutex queueMutex;
     std::condition_variable condition;
-    bool running = true;
+    std::atomic<bool> running = true;
 
     char usb_mode = '1';
     uint8_t usb_num_mode = 0;
@@ -103,6 +103,7 @@ private:
 
     USB usb;
 
+    //std::atomic<bool> running_serial_thread = false;
 
 
 

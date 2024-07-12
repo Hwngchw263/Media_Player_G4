@@ -94,24 +94,26 @@ void SerialPort::sendData(const std::string &data)
 
 // Function to read data from the serial port
 std::string SerialPort::receiveData()
-{   if (serial_port < 0)
+{   
+    if (serial_port < 0)
     {
         std::cerr << "Serial port not open. Cannot read data." << std::endl;
         return "";
     }
-    char read_buf[BUFFER_SIZE + 1];                           // Buffer to store received data
-    int num_bytes = read(serial_port, read_buf, BUFFER_SIZE); // Read data
-
-    if (num_bytes < 0)
-    {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
+ 
+        char read_buf[BUFFER_SIZE + 1];  
+        //std::cout<<"\ncome to read\n ";                         // Buffer to store received data
+        int num_bytes = read(serial_port, read_buf, BUFFER_SIZE); // Read data
+        if (num_bytes < 0)
         {
-            std::cerr << "Error reading: " << strerror(errno) << std::endl;
+            if (errno != EAGAIN && errno != EWOULDBLOCK)
+            {
+                std::cerr << "Error reading: " << strerror(errno) << std::endl;
+            }
+            return "";
         }
-        return "";
-    }
     read_buf[num_bytes] = '\0'; // Null terminate the string
-    return std::string(read_buf);
+    return std::string(read_buf); 
 }
 
 std::string SerialPort::getOpenSDADevicePath()
