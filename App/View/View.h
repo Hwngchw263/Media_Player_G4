@@ -16,7 +16,7 @@ public:
     std::string convertSecondsToTimeString(int totalSeconds);
     void printLine(char c, int width);
     void clearScreen();
-    void displayUSB(Flag flag);
+    void displayUSB();
     void displayTabBar();
     void displayMenuBar();
     void displayPlaybackBar();

@@ -27,42 +27,42 @@ int View::gettotalpage(std::vector<MediaFile>& files){
     this->totalPage = 1 + (files.size() - 1)/ITEMS_PER_PAGE;
     return totalPage;
 } 
-void View::displayUSB(Flag flag){
+void View::displayUSB(){
     clearScreen();
     std::cout << "Menu:\n";
     std::cout << "[1] Play from USB\n";
     std::cout << "[2] Play from Folder\n";
     std::cout << "[3] Exit\n";
-    switch(flag){
-        case USB_MODE:
-        {
-            std::cout << "USB mode: ";
-            break;
-        }
-        case USB_PATH:
-        {
-            std::cout << "Select direction: " ;
-            break;
-        }
-        case ACT_MODE:
-        {
-            std::cout << "Mode: " ;
-            break;    
-        }
-        case NUM_MODE:
-        {
-            std::cout << "Song: " ; 
-            break;   
-        }
-        case CIN_PATH:
-        {
-            std::cout << "Enter directory: ";
-        }
-        default:
-        {
-            break;
-        }
-    }
+    // switch(flag){
+    //     case USB_MODE:
+    //     {
+    //         std::cout << "USB mode: ";
+    //         break;
+    //     }
+    //     case USB_PATH:
+    //     {
+    //         std::cout << "Select direction: " ;
+    //         break;
+    //     }
+    //     case ACT_MODE:
+    //     {
+    //         std::cout << "Mode: " ;
+    //         break;    
+    //     }
+    //     case NUM_MODE:
+    //     {
+    //         std::cout << "Song: " ; 
+    //         break;   
+    //     }
+    //     case CIN_PATH:
+    //     {
+    //         std::cout << "Enter directory:\n ";
+    //     }
+    //     default:
+    //     {
+    //         break;
+    //     }
+    // }
 }
 //Function to display tab bar
 void View::displayTabBar(){
@@ -70,12 +70,12 @@ void View::displayTabBar(){
     printLine('=',200);
     std::cout << std::left
     << std::setw(1) << "|"
-    << std::setw(33) << "[b] Back" 
-    << std::setw(33) << "[h] Home"
-    << std::setw(33) << "[m] Music library"
-    << std::setw(33) << "[v] Video library"
+    << std::setw(33) << "[14] Back" 
+    << std::setw(33) << "[10] Home"
+    << std::setw(33) << "[11] Music library"
+    << std::setw(33) << "[12] Video library"
     << std::setw(33) << "[y] Playlists" 
-    << std::setw(33) << "[q] Quit" 
+    << std::setw(33) << "[9] Quit" 
     << std::setw(1) << "|"
     << std::endl;
     printLine('-',200);
@@ -102,7 +102,7 @@ void View::displayPlaybackBar(){
     << std::setw(21) << "[5] Next"
     << std::setw(21) << "[m] Repeat one"
     << std::setw(21) << "[l] Repeat all"
-    << std::setw(21) << "Volume[+][-]"
+    << std::setw(21) << "Volume[7][8]"
     << std::right 
     << std::setw(6) << "|"
     << std::endl;

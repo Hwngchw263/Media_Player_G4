@@ -22,7 +22,7 @@ class Controller
 public:
     Controller();
     ~Controller();
-    void handleInput(const char &input);
+    void handleInput(int input);
     //input 3 case 
     void handleInputUSB(int input);
     void handleSetDirectory(const std::string &dir);
@@ -64,6 +64,7 @@ private:
     void getInputFromSerial();
     void getInputFromCin();
     void executeTask();
+    void display();
     void processMessage(const std::string& message);
     void handleSelection();
     void handleTask(const std::string& task);
