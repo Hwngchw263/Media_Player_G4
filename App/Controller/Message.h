@@ -9,6 +9,7 @@
 #include <math.h>
 #include <string>
 #define Hex_Error 16
+
 // Structure of message
 typedef struct
 {
@@ -36,10 +37,8 @@ public:
     bool VerifyMessage(Message &msg);
     // Function to parse message
     void ParseMessage(std::string &receiver_data);
-    // Function parse data to take mode
-    char PareMode(uint8_t& mode, uint8_t total_mode);
-    // Function parse data to take numsong
-    int PareNumsong(int& numsong, int total_file);
+    // Function parse data to take number;
+    int PareNum(int& number, int total_value);
     // Function to convert hexa number to hexa string
     std::string hexToString(uint32_t value);
     // Function to convert one byte to hex string

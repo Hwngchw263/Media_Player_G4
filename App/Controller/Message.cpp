@@ -54,44 +54,21 @@ Message &DATAMCU::getmess()
 {
     return this->mess;
 }
-// Function parse data to take mode
-char DATAMCU::PareMode(uint8_t& mode, uint8_t total_mode)
+
+// Function parse data to take number
+int DATAMCU::PareNum(int& number, int total_value)
 {
     //Change number of mode
     if(mess.data == 1){
-        mode++;
+        number++;
     }
     else{
-        mode--;
+        number--;
     }
-    //Convert to range 0 - total_mode
-    uint8_t value = mode % total_mode;
-    //Convert to char
-    if (value >= 0 && value <= 9)
-    {
-        return static_cast<char>('0' + value);
-    }
-    else if (value >= 10 && value <= 15)
-    {
-        return static_cast<char>('A' + (value - 10));
-    }
-    else
-    {
-        return '?';
-    }
-}
-// Function parse data to take numsong
-int DATAMCU::PareNumsong(int& numsong, int total_file)
-{
-    //Change number of mode
-    if(mess.data == 1){
-        numsong++;
-    }
-    else{
-        numsong--;
-    }
-    //Convert to range 0 - total_file
-    return (numsong % total_file);
+    if (number > total_value) number = 1;
+    if (number < 1 ) number = total_value;
+    //Convert to range 0 - total_value
+    return (number % (total_value + 1));
 
 }
 // Function to convert hexa number to hexa string

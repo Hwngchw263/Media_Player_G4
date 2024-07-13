@@ -23,6 +23,13 @@ void Controller::MusicFinishedCallbackWrapper()
 {
     playerptr->FunctionCallback();
 }
+bool Controller::isValidNumber(const std::string& str) {
+    // Check if the string is empty
+    if (str.empty()) return false;
+
+    // Check if the string contains only digits
+    return std::all_of(str.begin(), str.end(), ::isdigit);
+}
 void Controller::run()
 {
     /*Send data to reset in MCU*/
@@ -33,7 +40,12 @@ void Controller::run()
     mcu_data.messageToString(mcu_data.getmess(), reset_message);
     // Send string to MCU
     sp.sendData(reset_message);
-
+    //Get direction from USB
+    usbpaths = usb_data.getUSBPaths();
+    total_path = usb_data.getUSBPaths().size();
+    std::cout << total_path << std::endl;
+    // std::cout << usbpaths[0] << std::endl;
+    // std::cout << usbpaths[1] << std::endl;
     // Start
     std::thread task_thread(&Controller::executeTask, this);
     std::thread serial_input_thread(&Controller::getInputFromSerial, this);
@@ -50,7 +62,8 @@ void Controller::getInputFromSerial()
 {
     while (running)
     {
-        view.displayPage(executing_lisfile,player.getduration(), player.getcurrenttrack());
+        view.displayUSB(current_flag);
+        //view.displayPage(executing_lisfile,player.getduration(), player.getcurrenttrack());
         std::string message = sp.receiveData();
         if (!message.empty())
         {
@@ -79,21 +92,24 @@ void Controller::getInputFromCin()
 {
     while (running)
     {
-        view.displayPage(executing_lisfile,player.getduration(),player.getcurrenttrack());
-        char cmd;
-        if (!is_playing)
-        {
-            std::cout << "Enter command: ";
-        }
-        std::cin>>cmd;
-
-        std::string str(1,cmd);
-        if (!str.empty())
-        {
+        view.displayUSB(current_flag);
+        //view.displayPage(executing_lisfile,player.getduration(),player.getcurrenttrack());
+        std::string input;
+        std::getline(std::cin, input);
+        if(current_flag != CIN_PATH){
+        //Use for enter a number string
+            //Check input string is valid(all character is '0' to '9')
+            if (isValidNumber(input))
             {
                 std::lock_guard<std::mutex> lock(queueMutex);
-                taskQueue.push(str);
+                taskQueue.push(input);
+                condition.notify_one();
             }
+        }
+        //using when enter a path
+        else{
+            std::lock_guard<std::mutex> lock(queueMutex);
+            taskQueue.push(input);
             condition.notify_one();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -111,7 +127,7 @@ void Controller::processMessage(const std::string &message)
 
         if (mcu_data.getmess().type == 'A')
         {
-            handleModeAndSongSelection();
+            handleSelection();
         }
         else if (mcu_data.getmess().type == 'S')
         {
@@ -135,24 +151,72 @@ void Controller::processMessage(const std::string &message)
     }
 }
 
-void Controller::handleModeAndSongSelection()
+void Controller::handleSelection()
 {
-    {
-        //std::unique_lock<std::mutex> lock(numsong_mutex);
-        int total_song = sizeof(parseTabtofiles());
-        if (is_playing)
+    switch(current_flag){
+        case USB_MODE:
         {
-            current_song = mcu_data.PareNumsong(num_song, total_song);
-            std::cout << "Song: " << current_song << std::endl;
+            //Calculate current usb mode
+            current_usb_mode = mcu_data.PareNum(current_usb_mode, USB_TOTAL_MODE);
+            std::cout << current_usb_mode  << std::endl;
+            break;
         }
-        else
+        case USB_PATH:
         {
-            // std::cout << "lock mode" << std::endl;
-            mode = mcu_data.PareMode(num_mode, TOTAL_MODE);
-            std::cout << "Enter command: ";
-            std::cout << "Mode: " << mode << std::endl;
+            //Calculate current usb path
+            current_usb_path = mcu_data.PareNum(current_usb_path, total_path);
+            std::cout  << current_usb_path << "." << usbpaths[current_usb_path - 1] << std::endl;
+            break;
         }
+        case ACT_MODE:
+        {
+            //Calculate current action mode
+            current_act_mode = mcu_data.PareNum(current_act_mode, TOTAL_MODE);
+            std::cout << current_act_mode << std::endl;
+            break;    
+        }
+        case NUM_MODE:
+        {
+            //Calculate current num song
+            int total_song = parseTabtofiles().size();
+            current_song = mcu_data.PareNum(current_song, total_song);
+            std::cout  << current_song << std::endl; 
+            break;   
+        }
+        default:
+        {
+            break;
+        }
+
     }
+    // if(current_usb_mode){
+    //     current_usb_mode = mcu_data.PareNum(usb_num_mode, USB_TOTAL_MODE);
+    //     std::cout << "Enter command: ";
+    //     std::cout << "USB mode: " << current_usb_mode << std::endl;
+    // }
+    // else{
+    //     //Check is not have any usb paths
+    //     int total_path = sizeof(usbpaths);
+    //     if(total_path != 0){
+    //         usb_num_path = mcu_data.PareNumsong(usb_num_path, total_path);
+    //         std::cout << "Select direction: " << usbpaths[usb_num_path - 1] << std::endl;
+    //     }
+    // }
+    // //std::unique_lock<std::mutex> lock(numsong_mutex);  
+    // if (is_playing)
+    // {
+    //     int total_song = sizeof(parseTabtofiles());
+    //     current_song = mcu_data.PareNumsong(num_song, total_song);
+    //     std::cout << "Song: " << current_song << std::endl;
+    // }
+    // else
+    // {
+    //     // std::cout << "lock mode" << std::endl;
+    //     mode = mcu_data.PareNum(num_mode, TOTAL_MODE);
+    //     std::cout << "Enter command: ";
+    //     std::cout << "Mode: " << mode << std::endl;
+    // }
+    
 }
 
 std::string Controller::getTaskFromQueue()
@@ -175,7 +239,7 @@ void Controller::executeTask()
         condition.wait(lock, [&]
                        { return !taskQueue.empty(); });
         std::string task = getTaskFromQueue();
-        // std::cout << "Task: " << task << std::endl;
+        std::cout << "Task: " << task << std::endl;
         if (!task.empty())
         {
             handleTask(task);
@@ -186,20 +250,110 @@ void Controller::executeTask()
 void Controller::handleTask(const std::string &task)
 {
     // std::cout << "Handling task: " << task << std::endl;
+    //If press button, run selected usb mode
     if (task == "S")
     {
-        std::lock_guard<std::mutex> lock(mode_mutex);
-        handleInput(mode);
+        std::lock_guard<std::mutex> lock(usb_mutex);
+        handleInputUSB(current_usb_mode);
     }
     else
     {
-        {
-            std::lock_guard<std::mutex> lock(mode_mutex);
-            mode = task[0];
-        }
-        handleInput(task[0]);
+
+        std::lock_guard<std::mutex> lock(usb_mutex);
+        //set current usb mode
+        current_usb_mode = std::stoi(task);
+        handleInputUSB(current_usb_mode);
     }
 }
+//input 3 case 
+void Controller::handleInputUSB(int input){
+    switch (input) {
+            case 1:
+                std::cout << "Handle USB." << std::endl;
+                handleUSB();
+                break;
+            case 2:
+                std::cout << "Handle Folder." << std::endl;
+                handleFolder();
+                break;
+            case 3:
+                std::cout << "Handle Exit." << std::endl;
+                handleExitUSBmenu();
+                break;
+            default:
+                std::cout << "Invalid choice. Please try again.\n";
+                break;
+        }
+}
+
+void Controller::handleExitUSBmenu(){
+
+    std::cout << "Exiting...\n";
+    exit(0);
+}
+void Controller::handleUSB(){
+    std::cout << total_path << std::endl;
+    if(total_path == 0){
+        std::cout << "Number of usbpath: " << usbpaths.size() << std::endl; 
+        std::cout << "No USB direction." << std::endl;
+        current_flag = USB_MODE;
+    }
+    else{
+        current_flag = USB_PATH;
+        // Get data from queue
+        {
+        std::unique_lock<std::mutex> lock(condition_mutex);
+        condition.wait(lock, [&]
+                        { return !taskQueue.empty(); });
+        std::string task = getTaskFromQueue();
+            // If task == "S" enter selection (run with input from MCU)
+            if (task == "S")
+            {
+                std::cout << "usb" << std::endl;
+                std::cout << "Select direction: " << usbpaths[usb_num_path - 1] << std::endl;
+                cur_dir = usbpaths[usb_num_path - 1];
+            }
+            // Run with input from Cin
+            else
+            {
+                cur_dir = task;
+            }
+            current_flag = ACT_MODE;
+            handleSetDirectory(cur_dir); 
+        }
+
+        //handleInput
+        //playFromUSB();
+        //handleSetDirectory(baseDir); 
+        //handleInput
+    }
+}
+void Controller::handleFolder(){
+    current_flag = CIN_PATH;
+    std::cout << "In handleFolder." << std::endl;
+    std::unique_lock<std::mutex> lock(queueMutex);
+    //std::unique_lock<std::mutex> lock(condition_mutex);
+    condition.wait(lock, [&]
+                    { return !taskQueue.empty(); });
+    std::string task = getTaskFromQueue();
+    //std::string task = getTaskFromQueue();
+    // //if valid
+    // if (model.setDirectory(task))
+    // { 
+    // handleSetDirectory(task); 
+    // current_flag = ACT_MODE;
+    // //handleInput
+    // }
+    // //if not valid
+    // else{
+    // std::cout << "Invalid directory. Please try again." << std::endl; 
+    // current_flag = USB_MODE;  
+    // }
+    std::cout << "Direction: " << task << std::endl;
+    current_flag = USB_MODE; 
+}
+
+
 
 void Controller::handleInput(const char &input)
 {
@@ -288,7 +442,7 @@ std::vector<MediaFile> &Controller::parseTabtofiles()
     // Thêm một giá trị trả về mặc định hoặc xử lý lỗi
     throw std::runtime_error("Invalid tab selected");
 }
-std::vector<std::string> &Controller::parseTabtofilepaths()
+std::vector<std::string> &Controller::parseTabtofilepaths()  
 {
     if (view.gettab() == HOME)
     {
@@ -307,9 +461,9 @@ std::vector<std::string> &Controller::parseTabtofilepaths()
 }
 void Controller::handleSetDirectory(const std::string &directory)
 {
-    cur_dir = directory;
-    if (model.setDirectory(directory))
-    {
+    //cur_dir = directory;
+    // if (model.setDirectory(directory))
+    // {
         //Set tab to display
         view.settab(MUSIC);
         //Set filelist to display
@@ -320,12 +474,13 @@ void Controller::handleSetDirectory(const std::string &directory)
         tabHistory.push(MUSIC);
         //Set page is 0
         view.setpage(1);
-        //view.displayMetadata(parseTabtofiles());
-    }
-    else
-    {
-        std::cout << "Invalid directory. Please try again." << std::endl;
-    }
+        std::cout << "handlesedirectory: "<< directory << std::endl;
+         //view.displayMetadata(parseTabtofiles());
+    // }
+    // else
+    // {
+    //     std::cout << "Invalid directory. Please try again." << std::endl;
+    // }
 }
 
 void Controller::handlePlay()
@@ -335,7 +490,7 @@ void Controller::handlePlay()
     //Get current playing list filepath
     executing_listfilepath = parseTabtofilepaths();
     //Set flag playing
-    is_playing = true;
+    current_flag = NUM_MODE;
     std::cout << "Enter song to play:  \n";
     int num;
     std::string task;
@@ -380,7 +535,7 @@ void Controller::handlePlay()
         sp.sendData(blinkgreen_message);
         // TO DO:: reset num in MCU to old mode
     }
-    is_playing = false;
+    current_flag = ACT_MODE;
     // view.displayMetadata(parseTabtofiles());
 }
 
@@ -561,7 +716,7 @@ void Controller::handleEditMetadata()
                     // model.savenewMetadata(parseTabtofiles()[num - 1]);
                     break; // Exit edit
                 default:
-                    std::cout << "Invalid choice. Please select again." << std::endl;
+                    std::cout << "Invalid choice edit. Please select again." << std::endl;
                     break;
                 }
             }

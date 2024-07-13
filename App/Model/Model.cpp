@@ -14,6 +14,9 @@ bool Model::setDirectory(const std::string& directory) {
     if (!fs::exists(directory) || !fs::is_directory(directory)) {
         return false;
     }
+    else{
+        
+    }
 
     for (const auto& entry : fs::recursive_directory_iterator(directory)) {
         if (entry.is_regular_file()) {

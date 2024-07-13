@@ -5,24 +5,37 @@
 #include "View.h"
 #include "Player.h"
 #include "Message.h"
+#include "USB.h"
 #include <stack>
 #include <string>
 #include <condition_variable>
 #include <queue>
-
+#include <cctype>
+#include <algorithm>
 #define TOTAL_MODE 16
+#define USB_TOTAL_MODE 3
+
+
+
 class Controller
 {
 public:
     Controller();
     ~Controller();
     void handleInput(const char &input);
-    void handleSetDirectory(const std::string &directory);
+    //input 3 case 
+    void handleInputUSB(int input);
+    void handleSetDirectory(const std::string &dir);
     static void MusicFinishedCallbackWrapper();
     void run();
     //void controlThreads(bool state);
     void continuousPlaybackTimeDisplay(Player& player, std::atomic<bool>& displayFlag);
 private:
+    //Check input
+    bool isValidNumber(const std::string& str);
+    void handleFolder();
+    void handleUSB();
+    void handleExitUSBmenu();
     std::vector<MediaFile> &parseTabtofiles();
     std::vector<std::string> &parseTabtofilepaths();
     void handlePlay();
@@ -43,6 +56,7 @@ private:
     View view;
     Player player;
     DATAMCU mcu_data;
+    USB  usb_data;
     std::stack<Tab> tabHistory;
     static Player *playerptr;
     std::string cur_dir;
@@ -51,7 +65,7 @@ private:
     void getInputFromCin();
     void executeTask();
     void processMessage(const std::string& message);
-    void handleModeAndSongSelection();
+    void handleSelection();
     void handleTask(const std::string& task);
     std::string getTaskFromQueue();
     
@@ -60,6 +74,7 @@ private:
     std::mutex flag_mutex;
     char serial_command;
 
+    std::mutex usb_mutex;
     std::mutex mode_mutex;
     std::mutex numsong_mutex;
     std::mutex datafield_mutex;
@@ -67,16 +82,22 @@ private:
     std::mutex playing_mutex;
     std::mutex condition_mutex;
 
-    std::atomic<bool> is_playing = false;
+    Flag current_flag = USB_MODE;
+    // std::atomic<bool> usb_mode = true;
+    // std::atomic<bool> usb_path = false;
+    // std::atomic<bool> is_playing = false;
+    // std::atomic<bool> usb_flag = true;
+
     char ParseData(std::string &message);
     std::queue<std::string> taskQueue;
     std::mutex queueMutex;
     std::condition_variable condition;
     bool running = true;
 
-    char mode = '1';
-    uint8_t num_mode = 0;
-    int num_song = 0;
+    int total_path = 0;
+    int current_usb_mode = 0;
+    int current_usb_path = 0;
+    int current_act_mode = 0;
     int current_song = 0;
     
     std::condition_variable cv;
@@ -93,6 +114,7 @@ private:
     void stopDisplayThread();
     std::vector<MediaFile> executing_lisfile;
     std::vector<std::string> executing_listfilepath;
+    std::vector<std::string> usbpaths;
 };
 
 #endif // CONTROLLER_H

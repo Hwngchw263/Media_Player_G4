@@ -8,12 +8,15 @@
 enum Tab {
     HOME, MUSIC, VIDEO
 };
-
+enum Flag {
+    USB_MODE, USB_PATH, CIN_PATH, ACT_MODE, NUM_MODE
+};
 class View {
 public:
     std::string convertSecondsToTimeString(int totalSeconds);
     void printLine(char c, int width);
     void clearScreen();
+    void displayUSB(Flag flag);
     void displayTabBar();
     void displayMenuBar();
     void displayPlaybackBar();

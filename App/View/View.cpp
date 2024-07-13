@@ -20,13 +20,50 @@ void View::printLine(char c, int width){
 
 //Clear screen
 void View::clearScreen() {
+    //system("clear");
     std::cout << "\033[2J\033[1;1H"; // ANSI escape code to clear the screen and move the cursor to the top-left corner
 } 
 int View::gettotalpage(std::vector<MediaFile>& files){
     this->totalPage = 1 + (files.size() - 1)/ITEMS_PER_PAGE;
     return totalPage;
 } 
-
+void View::displayUSB(Flag flag){
+    clearScreen();
+    std::cout << "Menu:\n";
+    std::cout << "[1] Play from USB\n";
+    std::cout << "[2] Play from Folder\n";
+    std::cout << "[3] Exit\n";
+    switch(flag){
+        case USB_MODE:
+        {
+            std::cout << "USB mode: ";
+            break;
+        }
+        case USB_PATH:
+        {
+            std::cout << "Select direction: " ;
+            break;
+        }
+        case ACT_MODE:
+        {
+            std::cout << "Mode: " ;
+            break;    
+        }
+        case NUM_MODE:
+        {
+            std::cout << "Song: " ; 
+            break;   
+        }
+        case CIN_PATH:
+        {
+            std::cout << "Enter directory: ";
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
 //Function to display tab bar
 void View::displayTabBar(){
    //Tab
