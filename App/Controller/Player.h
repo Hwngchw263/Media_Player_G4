@@ -46,6 +46,8 @@ public:
     void stop();
     void next();
     void previous();
+    void RepeatOneSong();
+    void RepeatAllSong();
     void setVolume(char volume);
     void FunctionCallback();
     void setSonglist(std::vector<std::string>& songlist);
@@ -58,8 +60,7 @@ public:
     std::atomic<bool> quitTimeThread;
     uint32_t getduration() ;
 private: 
-    void RepeatOneSong();
-    void RepaetAllSong();
+
     void audioThread(const std::string& filePath);
     std::thread playerThread;
     std::atomic<bool> isPlaying;

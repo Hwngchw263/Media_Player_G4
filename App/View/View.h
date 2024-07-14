@@ -16,14 +16,14 @@ public:
     std::string convertSecondsToTimeString(int totalSeconds);
     void printLine(char c, int width);
     void clearScreen();
-    void displayUSB();
-    void displayTabBar();
-    void displayMenuBar();
-    void displayPlaybackBar();
-    void displayMetadata();
+    void displayUSB(int num);
+    void displayTabBar(int num);
+    void displayMenuBar(int num);
+    void displayPlaybackBar(int num);
+    void displayMetadata(int num, int cur_song);
     void displayProgressBar(std::vector<MediaFile>& files,int duration, int cur_song);
-    void displayTitleVolumeBar(std::vector<MediaFile>& files, int cur_song);
-    void displayPage(std::vector<MediaFile>& executing_files, int duration, int cur_song);
+    void displayTitleVolumeBar(std::vector<MediaFile>& files, int cur_song, int volume_value);
+    void displayPage(std::vector<MediaFile>& executing_files, int duration, int cur_song, int volume_value, int num, int song_num);
     void displaySelection();
     int getpage();
     void setpage(int page);
@@ -32,12 +32,18 @@ public:
     void setdisplayfilelist(std::vector<MediaFile>& files);
     int gettotalpage(std::vector<MediaFile>& files);
 private:
+    const std::string bold_on = "\033[1m";
+    const std::string bold_off = "\033[0m";
     int currentPage = 0;
     int totalPage = 0;
     static constexpr int ITEMS_PER_PAGE = 5;
     Tab currentTab;
     std::vector<MediaFile> displayfilelist;
     int currsong = 0;
+    std::vector<std::string> USB_commands {"[1] Play from USB","[2] Play from Folder","[3] Exit"};
+    std::vector<std::string> TabBar_commands{"[11] Back","[12] Home","[13] Music library","[14] Video library","[15] Playlists","[16] Quit" };
+    std::vector<std::string> MenuBar_commands{ "[17] Remove","[18] Add to playlist","[19] Edit","[20] Previous page","[21] Next page"};
+    std::vector<std::string> PlaybackBar_commands{"[1] Play","[2] Stop","[3] Pause","[4] Resume","[5] Next","[6] Previous","[7] Repeat one","[8] Repeat all","Volume up[9]","Volume down[10]"};
 };
 
 #endif // VIEW_H

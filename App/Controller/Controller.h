@@ -12,7 +12,7 @@
 #include <queue>
 #include <cctype>
 #include <algorithm>
-#define TOTAL_MODE 16
+#define TOTAL_MODE 21
 #define USB_TOTAL_MODE 3
 
 
@@ -100,7 +100,7 @@ private:
     int current_usb_path = 0;
     int current_act_mode = 0;
     int current_song = 0;
-    
+    int volume = 1;
     std::condition_variable cv;
     bool exitFlag = false;
     bool isModePrinted = false;

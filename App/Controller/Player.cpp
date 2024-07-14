@@ -42,7 +42,7 @@ void Player::RepeatOneSong() {
 int Player::getcurrenttrack(){
     return music_Data.currentTrack;
 }
-void Player::RepaetAllSong() {
+void Player::RepeatAllSong() {
     std::cout << "Mode play single track: ON" << std::endl;
     repeatSingleSong = true;
 }
