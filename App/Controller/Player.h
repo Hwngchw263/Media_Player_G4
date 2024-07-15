@@ -48,10 +48,8 @@ public:
     void previous();
     void RepeatOneSong();
     void RepeatAllSong();
-    void setVolume(char volume);
     void FunctionCallback();
     void setSonglist(std::vector<std::string>& songlist);
-    void setMediafile(std::vector<MediaFile>& file);
     void setTrack(int track);
     void CalculateCurrentTime();
     void StartTimeThread();
@@ -62,16 +60,12 @@ public:
 private: 
 
     void audioThread(const std::string& filePath);
-    std::thread playerThread;
     std::atomic<bool> isPlaying;
     std::atomic<bool> isPaused;
-    int volume;
     bool stopflag = false;
     MusicData music_Data;
-    std::vector<MediaFile> mediafile;
-    const int Volume_Step = 1;
     bool repeatSingleSong = false;
-    int duration =0;
+    int duration = 0;
     std::condition_variable cv;
     std::mutex cv_m;
     std::thread timeThread;

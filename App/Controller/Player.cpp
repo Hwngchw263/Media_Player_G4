@@ -2,7 +2,7 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 
-Player::Player() : isPlaying(false), isPaused(false), volume(MIX_MAX_VOLUME/2),quitTimeThread(false){
+Player::Player() : isPlaying(false), isPaused(false), quitTimeThread(false){
     //SDL_Init(SDL_INIT_AUDIO);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0)
     {
@@ -36,15 +36,13 @@ Player::~Player() {
 }
 
 void Player::RepeatOneSong() {
-    std::cout << "Mode play all track: ON" << std::endl;
-    repeatSingleSong = false;
+    repeatSingleSong = true;
 }
 int Player::getcurrenttrack(){
     return music_Data.currentTrack;
 }
 void Player::RepeatAllSong() {
-    std::cout << "Mode play single track: ON" << std::endl;
-    repeatSingleSong = true;
+    repeatSingleSong = false;
 }
 
 void Player::setSonglist(std::vector<std::string>& songlist){
@@ -86,9 +84,7 @@ void Player::pause() {
     }
 
 }
- void Player::setMediafile(std::vector<MediaFile>& file){
-    this->mediafile = file;
- }
+
 void Player::resume() {
     stopflag = false;
     if (isPlaying && isPaused) {
@@ -121,20 +117,6 @@ void Player::previous(){
     play(this->music_Data.songlist[music_Data.currentTrack]);
     //stopflag = false;
 }
-
-void Player::setVolume(char volume) {
-    // this->volume = volume;
-    // std::cout << "Volume set to " << volume << std::endl;
-    if(volume == '+'){
-        this->volume = std::min(MIX_MAX_VOLUME, this->volume + Volume_Step);
-        std::cout << "Volume up" << std::endl;
-    }
-    else if(volume == '-'){
-        this->volume = std::min(MIX_MAX_VOLUME, this->volume - Volume_Step);
-        std::cout << "Volume down" << std::endl;
-    }
-    Mix_VolumeMusic(this->volume);
-} 
 
 
 void Player::setTrack(int track){
